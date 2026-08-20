@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Assistant UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <video id="backgroundVideo" autoplay loop muted playsinline>
+    <source src="From%20KlickPin%20CF%2012%20Classy%20travel%20bucket%20list%20ideas%20that%20look%20expensive%20while%20staying%20practical%20realistic%20and%20beginner%20friendly%20for%20anyone%20planning%20a%20beautiful%20-%20Pin-1040683426375376720.mp4" type="video/mp4" />
+    Your browser does not support the background video.
+  </video>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">E</div>
+        <div>
+          <h1>ESTA</h1>
+          <p>Your AI Voice Assistant</p>
+        </div>
+      </div>
+      <div class="sidebar-panel">
+        <h2>Voice Settings</h2>
+        <div class="voice-selector">
+          <label for="voiceSelect">Choose Voice:</label>
+          <select id="voiceSelect" class="voice-dropdown">
+            <option value="female">Female (Default)</option>
+            <option value="male">Male</option>
+          </select>
+        </div>
+      </div>
+      <div class="sidebar-panel">
+        <h2>Text Size</h2>
+        <div class="text-size-selector">
+          <label>Chat & UI text:</label>
+          <div class="text-size-buttons">
+            <button type="button" class="size-btn" data-size="small" title="Small text">A</button>
+            <button type="button" class="size-btn active" data-size="medium" title="Medium text">A</button>
+            <button type="button" class="size-btn" data-size="large" title="Large text">A</button>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-panel">
+        <h2>Find Phone</h2>
+        <p>Enter any phone number to launch a Google search for its location or related info.</p>
+        <form id="phoneSearchForm" class="phone-search-form">
+          <input id="phoneNumberInput" type="tel" placeholder="e.g. +919921718519" required />
+          <button type="submit" class="primary-button">Find Phone</button>
+        </form>
+      </div>
+      <div class="sidebar-panel">
+        <h2>Quick Start</h2>
+        <ul>
+          <li>Ask about your day</li>
+          <li>Plan tasks instantly</li>
+          <li>Generate ideas or code</li>
+        </ul>
+      </div>
+      <div class="sidebar-footer">
+        <span>Designed for an elegant chat experience.</span>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="main-header">
+        <div>
+          <p class="eyebrow">AI Assistant</p>
+          <h2>Talk to your intelligent assistant</h2>
+          <p class="subtitle">Type a question, use voice, or let the AI speak its replies.</p>
+        </div>
+        <div class="header-controls">
+          <div class="esta-status" id="estaStatus">Say "HELLO ESTA" to activate</div>
+          <div class="header-text-size" id="headerTextSize" hidden>
+            <span class="header-text-size-label">Text:</span>
+            <button type="button" class="header-size-btn" data-size="small" title="Small">A</button>
+            <button type="button" class="header-size-btn active" data-size="medium" title="Medium">A</button>
+            <button type="button" class="header-size-btn" data-size="large" title="Large">A</button>
+          </div>
+          <button class="icon-button" id="voiceModeBtn" title="Toggle Voice Mode">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 16.5c2.49 0 4.5-2.01 4.5-4.5v-4c0-2.49-2.01-4.5-4.5-4.5S5.5 5.51 5.5 8v4c0 2.49 2.01 4.5 4.5 4.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 9.5h.75M16.25 9.5H17M10 1.5v2M10 17.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="icon-button" id="speakerBtn" title="Toggle Voice Output">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M2 7.5v5c0 .414.336.75.75.75H5.5l3.85 2.57c.36.24.9.02.9-.45v-9.64c0-.47-.54-.69-.9-.45L5.5 11.75h-2.75c-.414 0-.75.336-.75.75Z" fill="currentColor"/>
+              <path d="M14.5 8a3.5 3.5 0 0 1 0 4.5M16.5 5.5a6 6 0 0 1 0 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="icon-button" id="stopVoiceBtn" title="Stop Voice Output">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M2 7.5v5c0 .414.336.75.75.75H5.5l3.85 2.57c.36.24.9.02.9-.45v-9.64c0-.47-.54-.69-.9-.45L5.5 11.75h-2.75c-.414 0-.75.336-.75.75Z" fill="currentColor"/>
+              <path d="M14 10h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="primary-button" id="suggestionBtn">Try a sample prompt</button>
+        </div>
+      </header>
+
+      <div class="main-content-area">
+        <aside class="assistant-visual" id="assistantVisual">
+          <div class="assistant-visual-overlay">
+            <div class="assistant-visual-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1.75a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0v-6a3 3 0 0 1 3-3Z" />
+                <path d="M19 10.75a7 7 0 0 1-14 0" />
+                <path d="M8.34 19.71a8.99 8.99 0 0 0 7.32 0" />
+                <path d="M12 22.75v-4" />
+              </svg>
+            </div>
+            <span class="assistant-visual-status">Ready</span>
+          </div>
+        </aside>
+
+        <section class="chat-card" aria-label="AI Chat Window">
+        <div class="mode-bar" aria-label="Assistant mode">
+          <button type="button" class="mode-button active" id="askModeBtn" data-mode="ask">
+            <span>Ask / Search</span>
+          </button>
+          <button type="button" class="mode-button" id="commandModeBtn" data-mode="command">
+            <span>Command Activation</span>
+          </button>
+        </div>
+        <div class="command-strip" id="commandStrip" hidden>
+          <button type="button" class="command-chip" data-command="call my mom">Call Mom</button>
+          <button type="button" class="command-chip" data-command="open whatsapp">Open WhatsApp</button>
+          <button type="button" class="command-chip" data-command="message mom hi mom">Message Mom</button>
+          <button type="button" class="command-chip" data-command="open youtube">Open YouTube</button>
+          <button type="button" class="command-chip" data-command="lock my pc">Lock PC</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+              <div class="message bot-message">
+                <span class="message-role">Assistant</span>
+                <p>Hi there! I’m ready when you are. Ask me anything to get started.</p>
+              </div>
+            </div>
+            <div class="voice-indicator" id="voiceIndicator">
+              <span class="pulse"></span>
+              <span>Listening...</span>
+            </div>
+        <form class="chat-form" id="chatForm">
+          <div class="input-container">
+            <label for="userInput" class="sr-only">Type your message</label>
+            <textarea id="userInput" placeholder="Ask a question or search the web..." rows="1" required></textarea>
+            <button type="button" class="mic-button" id="micBtn" title="Start voice input">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M10 16.5c2.49 0 4.5-2.01 4.5-4.5v-4c0-2.49-2.01-4.5-4.5-4.5S5.5 5.51 5.5 8v4c0 2.49 2.01 4.5 4.5 4.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 9.5h.75M16.25 9.5H17M10 1.5v2M10 17.5v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <button type="submit" class="send-button">Send</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

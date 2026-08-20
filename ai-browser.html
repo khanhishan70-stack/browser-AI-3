@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeoBrowser</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .bg-glow::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: -10%;
+      width: 60%;
+      height: 70%;
+      background: radial-gradient(circle, rgba(120, 60, 255, 0.25), transparent 70%);
+      animation: floatGlow 10s ease-in-out infinite alternate;
+    }
+    .bg-glow::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      right: -10%;
+      width: 50%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(255, 50, 150, 0.2), transparent 70%);
+      animation: floatGlow 12s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(60px, -40px) scale(1.15); }
+    }
+
+    .browser {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(18, 18, 30, 0.75);
+      backdrop-filter: blur(28px) saturate(1.3);
+      -webkit-backdrop-filter: blur(28px) saturate(1.3);
+      border-radius: 0;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: box-shadow 0.3s;
+    }
+    .browser:focus-within {
+      box-shadow:
+        0 35px 90px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(160, 100, 255, 0.15) inset;
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 18px 8px;
+    }
+    .window-dots {
+      display: flex;
+      gap: 7px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      transition: 0.15s;
+    }
+    .dot:hover { transform: scale(1.2); }
+    .dot.r { background: #ff5f57; }
+    .dot.y { background: #febc2e; }
+    .dot.g { background: #28c840; }
+
+    .titlebar-spacer {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+    .brand {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #a78bfa, #f472b6, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      user-select: none;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    /* ===== LIQUID GLASS BUTTONS ===== */
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px 7px 16px;
+      border-radius: 12px 12px 0 0;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-bottom: none;
+      font-family: inherit;
+      user-select: none;
+      box-shadow:
+        0 2px 12px rgba(0,0,0,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.1);
+    }
+    .tab:hover {
+      color: rgba(255, 255, 255, 0.8);
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.08), rgba(244, 114, 182, 0.04));
+      border-color: rgba(167, 139, 250, 0.15);
+      box-shadow:
+        0 2px 16px rgba(167, 139, 250, 0.08),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,0,0,0.1);
+    }
+    .tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.12), rgba(244, 114, 182, 0.06));
+      border-color: rgba(167, 139, 250, 0.2);
+      box-shadow:
+        0 -2px 20px rgba(167, 139, 250, 0.1),
+        0 4px 16px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,0,0,0.1);
+    }
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      height: 2.5px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #a78bfa, #f472b6, #fb923c);
+      box-shadow: 0 0 14px rgba(167, 139, 250, 0.5), 0 0 30px rgba(244, 114, 182, 0.2);
+    }
+    .tab .favicon {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(99, 102, 241, 0.3);
+    }
+    .tab .favicon.alt1 { background: linear-gradient(135deg, #f59e0b, #ef4444); box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); }
+    .tab .favicon.alt2 { background: linear-gradient(135deg, #10b981, #06b6d4); box-shadow: 0 0 6px rgba(16, 185, 129, 0.3); }
+    .tab .close-tab {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: rgba(255,255,255,0.25);
+      font-size: 10px;
+      line-height: 18px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+      transition: 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .tab .close-tab:hover {
+      background: rgba(244, 114, 182, 0.2);
+      border-color: rgba(244, 114, 182, 0.4);
+      color: #f472b6;
+      box-shadow: 0 0 16px rgba(244, 114, 182, 0.25), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .new-tab-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.3);
+      font-size: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .new-tab-btn:hover {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(99, 102, 241, 0.08));
+      border-color: rgba(167, 139, 250, 0.3);
+      color: #a78bfa;
+      box-shadow:
+        0 4px 20px rgba(167, 139, 250, 0.15),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px 12px;
+    }
+    .nav-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 17px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        inset 0 -1px 0 rgba(0,0,0,0.08);
+    }
+    .nav-btn:hover {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.12), rgba(244, 114, 182, 0.06));
+      border-color: rgba(167, 139, 250, 0.25);
+      color: #fff;
+      box-shadow:
+        0 4px 20px rgba(167, 139, 250, 0.12),
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        inset 0 -1px 0 rgba(0,0,0,0.08);
+    }
+    .nav-btn:active { transform: scale(0.92); }
+
+    .url-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 0 16px;
+      height: 40px;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        inset 0 -1px 0 rgba(0,0,0,0.06);
+    }
+    .url-bar:focus-within {
+      border-color: rgba(167, 139, 250, 0.3);
+      background: rgba(167, 139, 250, 0.05);
+      box-shadow:
+        0 0 30px rgba(120, 60, 255, 0.1),
+        0 0 0 1px rgba(167, 139, 250, 0.15),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,0,0,0.06);
+    }
+    .url-bar .lock {
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .url-bar input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .url-bar input::placeholder { color: rgba(255,255,255,0.2); }
+    .url-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .url-actions button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .url-actions button:hover {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(251, 191, 36, 0.08));
+      border-color: rgba(251, 146, 60, 0.3);
+      color: #fb923c;
+      box-shadow: 0 0 18px rgba(251, 146, 60, 0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .content {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      margin: 0 12px 12px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== START PAGE ===== */
+    #startPage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      overflow-y: auto;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(120, 60, 255, 0.08), transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(255, 50, 150, 0.06), transparent 50%);
+    }
+    #startPage.hidden { display: none; }
+
+    .start-logo {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -3px;
+      background: linear-gradient(135deg, #a78bfa 0%, #f472b6 50%, #fb923c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+      user-select: none;
+      position: relative;
+    }
+    .start-logo::after {
+      content: '';
+      position: absolute;
+      inset: -20px -40px;
+      background: radial-gradient(ellipse at center, rgba(167, 139, 250, 0.12), transparent 70%);
+      z-index: -1;
+      border-radius: 50%;
+    }
+    .start-tagline {
+      color: rgba(255,255,255,0.2);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+
+    .search-container {
+      width: 100%;
+      max-width: 560px;
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 60px;
+      padding: 0 22px;
+      height: 54px;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow:
+        0 4px 20px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        inset 0 -1px 0 rgba(0,0,0,0.08);
+    }
+    .search-box:focus-within {
+      border-color: rgba(167, 139, 250, 0.3);
+      background: rgba(167, 139, 250, 0.05);
+      box-shadow:
+        0 0 40px rgba(120, 60, 255, 0.12),
+        0 0 0 1px rgba(167, 139, 250, 0.2),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,0,0,0.08);
+    }
+    .search-box .search-icon {
+      color: rgba(255,255,255,0.25);
+      font-size: 18px;
+      flex-shrink: 0;
+      transition: 0.2s;
+    }
+    .search-box:focus-within .search-icon {
+      color: rgba(167, 139, 250, 0.6);
+    }
+    .search-box input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: rgba(255,255,255,0.85);
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .search-box input::placeholder {
+      color: rgba(255,255,255,0.2);
+    }
+    .search-box .search-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .search-box .search-actions button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .search-box .search-actions button:hover {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.18), rgba(244, 114, 182, 0.08));
+      border-color: rgba(167, 139, 250, 0.35);
+      color: #a78bfa;
+      box-shadow:
+        0 0 20px rgba(167, 139, 250, 0.2),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 18px;
+      border-radius: 60px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      letter-spacing: 0.3px;
+      border: 1px solid;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .status-badge.online {
+      background: rgba(45, 212, 191, 0.08);
+      border-color: rgba(45, 212, 191, 0.2);
+      color: #5eead4;
+      box-shadow:
+        0 0 20px rgba(45, 212, 191, 0.08),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .status-badge.offline {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      box-shadow:
+        0 0 20px rgba(239, 68, 68, 0.08),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .status-badge .dot-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .status-badge.online .dot-indicator {
+      animation: pulse-online 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-online {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .shortcuts {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 520px;
+    }
+    .shortcut {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      color: inherit;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.04);
+      font-family: inherit;
+      min-width: 88px;
+      box-shadow:
+        0 2px 12px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .shortcut:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05));
+      border-color: rgba(16, 185, 129, 0.18);
+      transform: translateY(-4px);
+      box-shadow:
+        0 8px 28px rgba(16, 185, 129, 0.1),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .shortcut .sc-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: 0.25s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .shortcut:hover .sc-icon {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .shortcut .sc-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ===== AI RESULTS PAGE ===== */
+    #resultsPage {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: 24px 28px;
+      overflow-y: auto;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(120, 60, 255, 0.06), transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(45, 212, 191, 0.04), transparent 50%);
+    }
+    #resultsPage.visible { display: flex; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .results-header .rh-query {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .results-header .rh-query span {
+      color: #fff;
+    }
+    .results-header .rh-mode {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 50px;
+      background: rgba(167, 139, 250, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      color: #a78bfa;
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(167, 139, 250, 0.06), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .results-header .rh-mode.cmd {
+      background: rgba(251, 146, 60, 0.08);
+      border-color: rgba(251, 146, 60, 0.2);
+      color: #fb923c;
+      box-shadow: 0 0 12px rgba(251, 146, 60, 0.06), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .results-body {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.06) transparent;
+    }
+    .chat-msg {
+      max-width: 92%;
+      padding: 14px 18px;
+      border-radius: 16px;
+      line-height: 1.7;
+      font-size: 13.5px;
+      animation: msgIn 0.25s ease;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-msg.user {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.12), rgba(99, 102, 241, 0.06));
+      border: 1px solid rgba(167, 139, 250, 0.15);
+      align-self: flex-end;
+      color: rgba(255,255,255,0.9);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .chat-msg.bot {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      align-self: flex-start;
+      color: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .chat-msg .msg-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+      opacity: 0.4;
+    }
+    .chat-msg p { margin-bottom: 8px; }
+    .chat-msg p:last-child { margin-bottom: 0; }
+    .chat-msg code {
+      background: rgba(255,255,255,0.06);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: #a78bfa;
+    }
+    .chat-msg pre {
+      background: rgba(0,0,0,0.25);
+      padding: 12px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      margin: 8px 0;
+    }
+
+    .results-footer {
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .chat-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 0 16px;
+      height: 44px;
+      transition: 0.25s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .chat-input-row:focus-within {
+      border-color: rgba(167, 139, 250, 0.25);
+      background: rgba(167, 139, 250, 0.04);
+      box-shadow: 0 0 20px rgba(120, 60, 255, 0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .chat-input-row input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .chat-input-row input::placeholder { color: rgba(255,255,255,0.2); }
+    .chat-input-row button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(6px);
+      color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+    .chat-input-row button:hover {
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(99, 102, 241, 0.08));
+      border-color: rgba(167, 139, 250, 0.3);
+      color: #a78bfa;
+      box-shadow: 0 0 14px rgba(167, 139, 250, 0.1);
+    }
+
+    .results-footer .mini-links {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+    .results-footer .mini-links button,
+    .results-footer .mini-links a {
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.04);
+      background: none;
+      color: rgba(255,255,255,0.25);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      transition: 0.15s;
+    }
+    .results-footer .mini-links button:hover,
+    .results-footer .mini-links a:hover {
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.5);
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(167, 139, 250, 0.4);
+      animation: dotBounce 1.2s infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .loading-bar {
+      height: 2px;
+      background: rgba(255,255,255,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+    .loading-bar .fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #a78bfa, #f472b6);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .loading-bar .fill.loading {
+      animation: loadAnim 1.8s ease forwards;
+    }
+    @keyframes loadAnim {
+      0%   { width: 0%; }
+      30%  { width: 35%; }
+      60%  { width: 65%; }
+      85%  { width: 82%; }
+      100% { width: 100%; }
+    }
+
+    .bookmarks {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 0 16px 6px;
+    }
+    .bookmark {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: 0.2s;
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.03);
+      font-family: inherit;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+    .bookmark:hover {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 146, 60, 0.05));
+      border-color: rgba(251, 191, 36, 0.2);
+      color: rgba(255,255,255,0.8);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .bookmark .bm-icon { font-size: 12px; }
+
+    .voice-lang-select {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 2px 8px;
+      color: rgba(255,255,255,0.5);
+      font-size: 10px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+      backdrop-filter: blur(4px);
+      transition: 0.2s;
+      max-width: 90px;
+    }
+    .voice-lang-select:hover { border-color: rgba(167,139,250,0.2); color: rgba(255,255,255,0.7); }
+    .voice-lang-select:focus { border-color: rgba(167,139,250,0.3); }
+    .voice-lang-select option { background: #1a1a2e; color: #fff; }
+
+    .search-mode-toggle {
+      display: flex;
+      align-items: center;
+      position: relative;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 2px;
+      cursor: pointer;
+      user-select: none;
+      gap: 0;
+    }
+    .mode-option {
+      padding: 2px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.25);
+      transition: color 0.2s;
+      z-index: 1;
+      position: relative;
+    }
+    .mode-option.active { color: #fff; }
+    .mode-slider {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      width: calc(50% - 2px);
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(167,139,250,0.2), rgba(99,102,241,0.1));
+      border: 1px solid rgba(167,139,250,0.15);
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+    }
+    .mode-slider.google { transform: translateX(100%); }
+
+    .top-icon-btn {
+      width: 22px;
+      height: 22px;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(4px);
+      color: rgba(255,255,255,0.25);
+      font-size: 9px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.15s;
+    }
+    .top-icon-btn:hover { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.2); color: #f472b6; }
+
+    .voice-toggle-on { color: #a78bfa !important; border-color: rgba(167,139,250,0.3) !important; }
+    .voice-toggle-off { opacity: 0.4; }
+
+    @media (max-width: 600px) {
+      .browser { max-height: 96vh; border-radius: 16px; }
+      .navbar { flex-wrap: wrap; }
+      .bookmarks { display: none; }
+      .shortcuts { gap: 4px; }
+      .shortcut { min-width: 60px; padding: 8px 10px; }
+      .shortcut .sc-icon { width: 36px; height: 36px; font-size: 16px; border-radius: 12px; }
+      .start-logo { font-size: 44px; }
+      .search-box { height: 44px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="browser" id="browser">
+
+  <div class="titlebar">
+    <div class="window-dots">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+    </div>
+    <div class="titlebar-spacer" style="display:flex;align-items:center;gap:10px;">
+      <span class="brand">✦ NEOBROWSER</span>
+      <select id="voiceLangSelect" class="voice-lang-select" title="Voice language">
+        <option value="">Voice off</option>
+        <option value="gtts_en">English</option>
+        <option value="gtts_en_us">English US</option>
+        <option value="gtts_en_uk">English UK</option>
+        <option value="gtts_es">Spanish</option>
+        <option value="gtts_fr">French</option>
+        <option value="gtts_de">German</option>
+        <option value="gtts_it">Italian</option>
+        <option value="gtts_pt">Portuguese</option>
+        <option value="gtts_ja">Japanese</option>
+        <option value="gtts_ko">Korean</option>
+        <option value="gtts_zh">Chinese</option>
+      </select>
+      <div class="search-mode-toggle" id="searchModeToggle" title="Switch search engine">
+        <span class="mode-option" data-mode="esta">ESTA</span>
+        <span class="mode-option" data-mode="google">Google</span>
+        <div class="mode-slider" id="modeSlider"></div>
+      </div>
+    </div>
+    <div style="width:52px;display:flex;align-items:center;gap:4px;">
+      <button class="top-icon-btn" id="stopVoiceBtn" title="Stop speaking">&#x25a0;</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabContainer">
+    <button class="tab active" data-idx="0">
+      <span class="favicon"></span>
+      New Tab
+      <span class="close-tab">&times;</span>
+    </button>
+    <button class="new-tab-btn" id="newTabBtn" title="New tab">+</button>
+  </div>
+
+  <div class="loading-bar"><div class="fill" id="loadingFill"></div></div>
+
+  <div class="navbar">
+    <button class="nav-btn" id="backBtn" title="Back">&#x2190;</button>
+    <button class="nav-btn" id="fwdBtn" title="Forward">&#x2192;</button>
+    <button class="nav-btn" id="reloadBtn" title="Reload">&#x21bb;</button>
+    <div class="url-bar">
+      <span class="lock">&#x1f512;</span>
+      <input type="text" id="urlInput" placeholder="Search or enter URL..." spellcheck="false" />
+      <div class="url-actions">
+        <button id="voiceToggleBtn" title="Toggle voice">&#x1f50a;</button>
+        <button id="bookmarkBtn" title="Bookmark">&#9733;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bookmarks">
+    <button class="bookmark" data-url="https://github.com"><span class="bm-icon">&#x2b50;</span> GitHub</button>
+    <button class="bookmark" data-url="https://chat.openai.com"><span class="bm-icon">&#x1f4ac;</span> ChatGPT</button>
+    <button class="bookmark" data-url="https://youtube.com"><span class="bm-icon">&#x25b6;</span> YouTube</button>
+    <button class="bookmark" data-url="https://reddit.com"><span class="bm-icon">&#x1f4ac;</span> Reddit</button>
+    <button class="bookmark" data-url="https://x.com"><span class="bm-icon">&#x1d54f;</span> X</button>
+    <button class="bookmark" data-url="http://localhost:5173/"><span class="bm-icon">&#x1f4c4;</span> PDF</button>
+  </div>
+
+  <div class="content" id="contentArea">
+    <div id="startPage">
+      <div class="start-logo">✦ NEO</div>
+      <div class="start-tagline">ai-powered search engine</div>
+      <div class="status-badge offline" id="statusBadge">
+        <span class="dot-indicator"></span>
+        <span id="statusText">Backend offline</span>
+      </div>
+
+      <div class="search-container">
+        <form class="search-box" id="searchForm" autocomplete="off">
+          <span class="search-icon">&#x1f50d;</span>
+          <input type="text" id="searchInput" placeholder="Ask AI anything or type a URL..." spellcheck="false" autofocus />
+          <div class="search-actions">
+            <button type="button" id="clearSearch" title="Clear">&#x2715;</button>
+            <button type="submit" title="Search">&#x2192;</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="shortcuts">
+        <a class="shortcut" href="https://github.com">
+          <div class="sc-icon">&#x2b50;</div>
+          <span class="sc-name">GitHub</span>
+        </a>
+        <a class="shortcut" href="https://youtube.com">
+          <div class="sc-icon">&#x25b6;</div>
+          <span class="sc-name">YouTube</span>
+        </a>
+        <a class="shortcut" href="https://chat.openai.com">
+          <div class="sc-icon">&#x1f4ac;</div>
+          <span class="sc-name">ChatGPT</span>
+        </a>
+        <a class="shortcut" href="https://reddit.com">
+          <div class="sc-icon">&#x1f4ac;</div>
+          <span class="sc-name">Reddit</span>
+        </a>
+        <a class="shortcut" href="https://x.com">
+          <div class="sc-icon">&#x1d54f;</div>
+          <span class="sc-name">X</span>
+        </a>
+        <a class="shortcut" href="https://figma.com">
+          <div class="sc-icon">&#x1f3a8;</div>
+          <span class="sc-name">Figma</span>
+        </a>
+        <a class="shortcut" href="http://localhost:5173/">
+          <div class="sc-icon">&#x1f4c4;</div>
+          <span class="sc-name">PDF Converter</span>
+        </a>
+      </div>
+    </div>
+
+    <div id="resultsPage">
+      <div class="results-header">
+        <div class="rh-query">Chat with <span id="resultQuery">ESTA AI</span></div>
+        <div class="rh-mode" id="resultMode">ESTA AI</div>
+      </div>
+      <div class="results-body" id="chatMessages"></div>
+      <div class="results-footer">
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="Ask a follow-up..." spellcheck="false" />
+          <button type="button" id="chatSendBtn">&#x2191;</button>
+        </div>
+        <div class="mini-links">
+          <button id="newChatBtn">&#x2795; New chat</button>
+          <a class="google-link" id="googleFallbackLink" href="#" target="_blank">&#x1f310; Google</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const BACKEND_URL = 'http://127.0.0.1:5000';
+
+  const state = {
+    tabs: [{ url: null, title: 'New Tab', search: null, messages: [] }],
+    activeIdx: 0,
+    history: [],
+    historyIdx: -1,
+    backendOnline: false,
+    chatBusy: false,
+    searchMode: 'esta',
+    voiceMuted: true,
+    voiceLang: '',
+    ttsAudio: null,
+  };
+
+  const startPage = document.getElementById('startPage');
+  const resultsPage = document.getElementById('resultsPage');
+  const urlInput = document.getElementById('urlInput');
+  const searchInput = document.getElementById('searchInput');
+  const searchForm = document.getElementById('searchForm');
+  const clearBtn = document.getElementById('clearSearch');
+  const tabContainer = document.getElementById('tabContainer');
+  const loadingFill = document.getElementById('loadingFill');
+  const newTabBtn = document.getElementById('newTabBtn');
+  const statusBadge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const resultQuery = document.getElementById('resultQuery');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  const chatSendBtn = document.getElementById('chatSendBtn');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const resultMode = document.getElementById('resultMode');
+  const googleFallbackLink = document.getElementById('googleFallbackLink');
+  const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+  const voiceLangSelect = document.getElementById('voiceLangSelect');
+  const stopVoiceBtn = document.getElementById('stopVoiceBtn');
+
+  const bookmarksBar = document.querySelectorAll('.bookmark');
+
+  // ===== VOICE =====
+  async function speakText(text) {
+    if (state.voiceMuted || !state.voiceLang || !state.backendOnline) return;
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/voice/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice_id: state.voiceLang }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (state.ttsAudio) { try { state.ttsAudio.pause(); } catch {} }
+      state.ttsAudio = new Audio(url);
+      state.ttsAudio.onended = () => { try { URL.revokeObjectURL(url); } catch {} };
+      state.ttsAudio.play().catch(() => {});
+    } catch {}
+  }
+
+  function stopVoice() {
+    if (state.ttsAudio) { try { state.ttsAudio.pause(); } catch {} state.ttsAudio = null; }
+    if (state.backendOnline) {
+      fetch(`${BACKEND_URL}/api/voice/stop`, { method: 'POST' }).catch(() => {});
+    }
+  }
+
+  function toggleVoice() {
+    state.voiceMuted = !state.voiceMuted;
+    voiceToggleBtn.classList.toggle('voice-toggle-on', !state.voiceMuted);
+    voiceToggleBtn.classList.toggle('voice-toggle-off', state.voiceMuted);
+    voiceToggleBtn.innerHTML = state.voiceMuted ? '&#x1f507;' : '&#x1f50a;';
+    voiceToggleBtn.title = state.voiceMuted ? 'Unmute voice' : 'Mute voice';
+    if (state.voiceMuted) stopVoice();
+  }
+
+  voiceToggleBtn.addEventListener('click', toggleVoice);
+  stopVoiceBtn.addEventListener('click', stopVoice);
+  voiceLangSelect.addEventListener('change', () => {
+    state.voiceLang = voiceLangSelect.value;
+    if (state.voiceLang) {
+      state.voiceMuted = false;
+      voiceToggleBtn.classList.remove('voice-toggle-off');
+      voiceToggleBtn.classList.add('voice-toggle-on');
+      voiceToggleBtn.innerHTML = '&#x1f50a;';
+      voiceToggleBtn.title = 'Mute voice';
+    } else {
+      state.voiceMuted = true;
+      voiceToggleBtn.classList.add('voice-toggle-off');
+      voiceToggleBtn.classList.remove('voice-toggle-on');
+      voiceToggleBtn.innerHTML = '&#x1f507;';
+      voiceToggleBtn.title = 'Unmute voice';
+      stopVoice();
+    }
+  });
+
+  // ===== SEARCH MODE TOGGLE =====
+  const searchModeToggle = document.getElementById('searchModeToggle');
+  const modeSlider = document.getElementById('modeSlider');
+  const modeOptions = searchModeToggle.querySelectorAll('.mode-option');
+
+  function setSearchMode(mode) {
+    state.searchMode = mode;
+    modeOptions.forEach(el => el.classList.toggle('active', el.dataset.mode === mode));
+    modeSlider.classList.toggle('google', mode === 'google');
+    searchModeToggle.title = mode === 'esta' ? 'Switch to Google search' : 'Switch to ESTA AI search';
+    startPage.querySelector('.start-tagline').textContent =
+      mode === 'esta' ? 'ai-powered search engine' : 'google search engine';
+  }
+
+  searchModeToggle.addEventListener('click', () => {
+    const next = state.searchMode === 'esta' ? 'google' : 'esta';
+    setSearchMode(next);
+  });
+
+  // ===== BACKEND CHECK =====
+  async function checkBackend() {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        state.backendOnline = true;
+        statusBadge.className = 'status-badge online';
+        statusText.textContent = 'ESTA AI Online';
+        return true;
+      }
+    } catch {}
+    state.backendOnline = false;
+    statusBadge.className = 'status-badge offline';
+    statusText.textContent = 'Backend offline — using Google';
+    return false;
+  }
+
+  async function queryAI(query) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query, mode: 'ask' }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!res.ok) throw new Error('Backend error');
+      const data = await res.json();
+      return data.response || 'No response from AI.';
+    } catch (err) {
+      console.error('AI query error:', err);
+      return null;
+    }
+  }
+
+  function isLikelyURL(text) {
+    return /^[a-zA-Z][a-zA-Z0-9]*:\/\//.test(text) || /^[\w.-]+\.[a-z]{2,}/.test(text) || text === 'about:blank';
+  }
+
+  // ===== NAVIGATION (opens in real browser) =====
+  function navigate(url) {
+    if (!url || url === 'about:blank') return showStart();
+    const clean = url.startsWith('http') ? url : 'https://' + url;
+
+    // Open in real browser tab — most sites block iframe loading
+    window.open(clean, '_blank');
+
+    urlInput.value = clean;
+    state.tabs[state.activeIdx].url = clean;
+    state.tabs[state.activeIdx].search = null;
+    updateTabTitle(clean);
+
+    state.history = state.history.slice(0, state.historyIdx + 1);
+    state.history.push(clean);
+    state.historyIdx = state.history.length - 1;
+  }
+
+  function showLoading() {
+    loadingFill.classList.remove('loading');
+    void loadingFill.offsetWidth;
+    loadingFill.classList.add('loading');
+  }
+  function hideLoading() {
+    loadingFill.classList.remove('loading');
+  }
+
+  function showStart() {
+    startPage.classList.remove('hidden');
+    resultsPage.classList.remove('visible');
+    urlInput.value = '';
+    searchInput.value = '';
+    chatInput.value = '';
+    hideLoading();
+    state.tabs[state.activeIdx].url = null;
+    state.tabs[state.activeIdx].search = null;
+    updateTabTitle(null);
+    checkBackend();
+    setTimeout(() => searchInput.focus(), 200);
+  }
+
+  function updateTabTitle(url) {
+    const tab = document.querySelector(`.tab[data-idx="${state.activeIdx}"]`);
+    if (!tab) return;
+    const name = url ? new URL(url).hostname.replace('www.', '').split('.')[0] : 'New Tab';
+    const label = name.charAt(0).toUpperCase() + name.slice(1);
+    tab.childNodes[1].textContent = label.length > 14 ? label.slice(0, 12) + '…' : label;
+    state.tabs[state.activeIdx].title = label;
+  }
+
+  // ===== CHAT / SEARCH (continuous like ChatGPT) =====
+  function appendMsg(role, text, save = true) {
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    const label = role === 'user' ? 'You' : 'ESTA AI';
+    div.innerHTML = `<span class="msg-label">${label}</span>${formatAIResponse(text)}`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (save) {
+      state.tabs[state.activeIdx].messages.push({ role, text });
+    }
+    if (role === 'bot') speakText(text.replace(/<[^>]*>/g, ''));
+  }
+
+  function showThinking() {
+    const div = document.createElement('div');
+    div.className = 'chat-msg bot';
+    div.id = 'thinkingMsg';
+    div.innerHTML = '<span class="msg-label">ESTA AI</span><div class="thinking-dots"><span></span><span></span><span></span></div>';
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function removeThinking() {
+    const el = document.getElementById('thinkingMsg');
+    if (el) el.remove();
+  }
+
+  async function sendToAI(query) {
+    if (state.backendOnline) {
+      const answer = await queryAI(query);
+      if (answer) return answer;
+    }
+    return null;
+  }
+
+  function isWakeWord(text) {
+    const t = text.toLowerCase().trim();
+    return t.includes('hello esta') || t.includes('hi esta') || t.includes('hey esta') || t === 'esta';
+  }
+
+  const SITE_MAP = {
+    'youtube': 'https://youtube.com',
+    'google': 'https://google.com',
+    'github': 'https://github.com',
+    'gmail': 'https://mail.google.com',
+    'reddit': 'https://reddit.com',
+    'twitter': 'https://x.com',
+    'x': 'https://x.com',
+    'facebook': 'https://facebook.com',
+    'instagram': 'https://instagram.com',
+    'chatgpt': 'https://chat.openai.com',
+    'amazon': 'https://amazon.com',
+    'netflix': 'https://netflix.com',
+    'stackoverflow': 'https://stackoverflow.com',
+    'figma': 'https://figma.com',
+    'drive': 'https://drive.google.com',
+    'maps': 'https://maps.google.com',
+    'whatsapp': 'https://web.whatsapp.com',
+    'linkedin': 'https://linkedin.com',
+    'spotify': 'https://spotify.com',
+    'pinterest': 'https://pinterest.com',
+    'yahoo': 'https://yahoo.com',
+    'bing': 'https://bing.com',
+    'wikipedia': 'https://wikipedia.org',
+    'ebay': 'https://ebay.com',
+    'twitch': 'https://twitch.tv',
+    'discord': 'https://discord.com',
+    'medium': 'https://medium.com',
+    'notion': 'https://notion.so',
+    'slack': 'https://slack.com',
+    'trello': 'https://trello.com',
+    'zoom': 'https://zoom.us',
+  };
+
+  function resolveSiteName(text) {
+    const t = text.toLowerCase().trim();
+    const prefixes = ['open ', 'go to ', 'take me to ', 'navigate to ', 'launch ', 'visit '];
+    let name = t;
+    for (const p of prefixes) {
+      if (t.startsWith(p)) { name = t.slice(p.length).trim(); break; }
+    }
+    if (!name) return null;
+    // Check direct match
+    if (SITE_MAP[name]) return SITE_MAP[name];
+    // Check partial match
+    for (const [key, url] of Object.entries(SITE_MAP)) {
+      if (name.includes(key) || key.includes(name)) return url;
+    }
+    // Try as a domain
+    if (/^[\w.-]+\.[a-z]{2,}$/.test(name)) {
+      return name.startsWith('http') ? name : 'https://' + name;
+    }
+    return null;
+  }
+
+  function handleOpenCommand(text) {
+    const url = resolveSiteName(text);
+    if (url) {
+      navigate(url);
+      return true;
+    }
+    return false;
+  }
+
+  async function handleSearch(query) {
+    if (!query) return;
+    if (isLikelyURL(query)) { navigate(query); return; }
+
+    startPage.classList.add('hidden');
+    resultsPage.classList.add('visible');
+    resultQuery.textContent = 'ESTA AI';
+
+    // Build Google fallback
+    googleFallbackLink.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+
+    // Wake word — respond instantly without backend
+    if (isWakeWord(query)) {
+      appendMsg('user', query);
+      appendMsg('bot', 'Hey! I\'m ESTA — built by HISHAN KHAN. Ask me anything or say a command like "open YouTube"!');
+      urlInput.value = query;
+      updateTabTitleFromSearch(query);
+      return;
+    }
+
+    // Open website command
+    if (handleOpenCommand(query)) {
+      appendMsg('user', query);
+      appendMsg('bot', `Opening ${query.replace(/^(open |go to |take me to |navigate to |launch |visit )/i, '')}...`);
+      urlInput.value = query;
+      updateTabTitleFromSearch(query);
+      return;
+    }
+
+    // Google search mode
+    if (state.searchMode === 'google') {
+      navigate(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    appendMsg('user', query);
+    showThinking();
+    showLoading();
+
+    const answer = await sendToAI(query);
+    removeThinking();
+    hideLoading();
+
+    if (answer) {
+      appendMsg('bot', answer);
+      resultMode.textContent = 'ESTA AI';
+      resultMode.className = 'rh-mode';
+    } else {
+      const fallback = `AI backend unavailable. <a href="${googleFallbackLink.href}" target="_blank" style="color:#a78bfa;">Search on Google instead</a>.`;
+      appendMsg('bot', fallback);
+      resultMode.textContent = 'Offline';
+      resultMode.className = 'rh-mode';
+    }
+
+    urlInput.value = query;
+    updateTabTitleFromSearch(query);
+  }
+
+  async function sendFollowUp() {
+    if (state.chatBusy) return;
+    const query = chatInput.value.trim();
+    if (!query) return;
+    chatInput.value = '';
+
+    // Open website command from follow-up
+    if (handleOpenCommand(query)) {
+      appendMsg('user', query);
+      appendMsg('bot', `Opening ${query.replace(/^(open |go to |take me to |navigate to |launch |visit )/i, '')}...`);
+      chatInput.focus();
+      return;
+    }
+
+    // Google search mode from follow-up
+    if (state.searchMode === 'google') {
+      navigate(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+      return;
+    }
+
+    appendMsg('user', query);
+    showThinking();
+    state.chatBusy = true;
+    chatSendBtn.disabled = true;
+
+    const answer = await sendToAI(query);
+    removeThinking();
+    state.chatBusy = false;
+    chatSendBtn.disabled = false;
+
+    if (answer) {
+      appendMsg('bot', answer);
+    } else {
+      appendMsg('bot', 'Sorry, I couldn\'t process that. Try again.');
+    }
+
+    chatInput.focus();
+  }
+
+  function startNewChat() {
+    state.tabs[state.activeIdx].messages = [];
+    state.tabs[state.activeIdx].search = null;
+    chatMessages.innerHTML = '';
+    chatInput.value = '';
+    chatInput.focus();
+    appendMsg('bot', 'Hi! Ask me anything — I\'ll keep the conversation going.');
+  }
+
+  function updateTabTitleFromSearch(query) {
+    const tab = document.querySelector(`.tab[data-idx="${state.activeIdx}"]`);
+    if (!tab) return;
+    const label = query.length > 14 ? query.slice(0, 12) + '…' : query;
+    tab.childNodes[1].textContent = label;
+    state.tabs[state.activeIdx].title = label;
+  }
+
+  function formatAIResponse(text) {
+    // Auto-detect if it's code or plain text
+    if (text.includes('```')) {
+      return text
+        .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre style="background:rgba(255,255,255,0.04);padding:14px;border-radius:12px;overflow-x:auto;font-size:13px;"><code>$2</code></pre>')
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    }
+    const paragraphs = text.split(/\n{2,}/);
+    return paragraphs.map(p => p.trim() ? `<p>${p.replace(/\n/g, '<br>')}</p>` : '').join('');
+  }
+
+  // ===== EVENT LISTENERS =====
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleSearch(searchInput.value.trim());
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch(searchInput.value.trim());
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    searchInput.focus();
+  });
+
+  newChatBtn.addEventListener('click', startNewChat);
+
+  // Chat follow-up
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendFollowUp();
+    }
+  });
+  chatSendBtn.addEventListener('click', sendFollowUp);
+
+  urlInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const val = urlInput.value.trim();
+      if (val) {
+        if (isLikelyURL(val)) navigate(val);
+        else handleSearch(val);
+      }
+    }
+  });
+
+  // Input sync
+  searchInput.addEventListener('input', () => { urlInput.value = searchInput.value; });
+  urlInput.addEventListener('input', () => { searchInput.value = urlInput.value; });
+
+  // ===== NAV BUTTONS =====
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (state.historyIdx > 0) {
+      state.historyIdx--;
+      const url = state.history[state.historyIdx];
+      urlInput.value = url;
+      startPage.classList.add('hidden');
+      resultsPage.classList.remove('visible');
+      window.open(url, '_blank');
+    }
+  });
+
+  document.getElementById('fwdBtn').addEventListener('click', () => {
+    if (state.historyIdx < state.history.length - 1) {
+      state.historyIdx++;
+      const url = state.history[state.historyIdx];
+      urlInput.value = url;
+      startPage.classList.add('hidden');
+      resultsPage.classList.remove('visible');
+      window.open(url, '_blank');
+    }
+  });
+
+  document.getElementById('reloadBtn').addEventListener('click', () => {
+    const tab = state.tabs[state.activeIdx];
+    if (tab.url) {
+      window.open(tab.url, '_blank');
+    }
+  });
+
+  // ===== TABS =====
+  function renderTabs() {
+    const btns = tabContainer.querySelectorAll('.tab');
+    btns.forEach(b => b.remove());
+
+    state.tabs.forEach((tab, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'tab' + (i === state.activeIdx ? ' active' : '');
+      btn.dataset.idx = i;
+
+      const colors = ['', 'alt1', 'alt2'];
+      const fav = document.createElement('span');
+      fav.className = 'favicon ' + colors[i % 3];
+      btn.appendChild(fav);
+
+      const label = document.createTextNode(tab.title || 'New Tab');
+      btn.appendChild(label);
+
+      const close = document.createElement('span');
+      close.className = 'close-tab';
+      close.textContent = '\u00D7';
+      close.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeTab(i);
+      });
+      btn.appendChild(close);
+
+      btn.addEventListener('click', () => switchTab(i));
+      tabContainer.insertBefore(btn, newTabBtn);
+    });
+  }
+
+  function switchTab(idx) {
+    state.activeIdx = idx;
+    const tab = state.tabs[idx];
+    renderTabs();
+
+    // Restore chat messages
+    if (tab.messages && tab.messages.length > 0) {
+      resultsPage.classList.add('visible');
+      startPage.classList.add('hidden');
+      frame.style.display = 'none';
+      resultQuery.textContent = 'ESTA AI';
+      chatMessages.innerHTML = '';
+      tab.messages.forEach(m => appendMsg(m.role, m.text, false));
+      return;
+    }
+
+    if (tab.url) {
+      startPage.classList.add('hidden');
+      resultsPage.classList.remove('visible');
+      urlInput.value = tab.url;
+    } else {
+      showStart();
+    }
+  }
+
+  function closeTab(idx) {
+    if (state.tabs.length <= 1) return;
+    state.tabs.splice(idx, 1);
+    if (state.activeIdx >= state.tabs.length) state.activeIdx = state.tabs.length - 1;
+    if (state.activeIdx >= idx && state.activeIdx > 0) state.activeIdx--;
+    switchTab(state.activeIdx);
+  }
+
+  newTabBtn.addEventListener('click', () => {
+    state.tabs.push({ url: null, title: 'New Tab', search: null, messages: [] });
+    state.activeIdx = state.tabs.length - 1;
+    showStart();
+    renderTabs();
+  });
+
+  // ===== BOOKMARKS =====
+  bookmarksBar.forEach(bm => {
+    bm.addEventListener('click', () => navigate(bm.dataset.url));
+  });
+
+  // ===== SHORTCUTS =====
+  document.querySelectorAll('.shortcut').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigate(card.getAttribute('href'));
+    });
+  });
+
+  // ===== INIT =====
+  renderTabs();
+  showStart();
+</script>
+
+</body>
+</html>

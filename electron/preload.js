@@ -1,0 +1,126 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  isElectron: true,
+  clearBrowsingData: (opts) => ipcRenderer.invoke('clear-browsing-data', opts),
+  getCookies: (filter) => ipcRenderer.invoke('get-cookies', filter),
+  clearAllCookies: () => ipcRenderer.invoke('clear-all-cookies'),
+  getPermissionState: (perm) => ipcRenderer.invoke('get-permission-state', perm),
+  getCertInfo: (url) => ipcRenderer.invoke('get-cert-info', url),
+  minimize: () => ipcRenderer.send('window-minimize'),
+  maximize: () => ipcRenderer.send('window-maximize'),
+  restore: () => ipcRenderer.send('window-restore'),
+  close: () => ipcRenderer.send('window-close'),
+  toggleFullscreen: () => ipcRenderer.send('window-fullscreen'),
+  onFullscreenChange: (cb) => ipcRenderer.on('fullscreen-changed', (e, fs) => cb(fs)),
+  onBeforeQuit: (cb) => ipcRenderer.on('before-quit', () => cb()),
+  appQuitting: () => ipcRenderer.send('app-quitting'),
+  onOpenInNewTab: (cb) => ipcRenderer.on('open-in-new-tab', (e, url) => cb(url)),
+  onDownloadStart: (cb) => ipcRenderer.on('download-start', (e, d) => cb(d)),
+  onDownloadProgress: (cb) => ipcRenderer.on('download-progress', (e, d) => cb(d)),
+  onDownloadDone: (cb) => ipcRenderer.on('download-done', (e, d) => cb(d)),
+  onDownloadWarning: (cb) => ipcRenderer.on('download-warning', (e, d) => cb(d)),
+  sendDownloadResponse: (id, allow) => ipcRenderer.send('download-response', { id, allow }),
+  removeDownloadListeners: () => {
+    ipcRenderer.removeAllListeners('download-start');
+    ipcRenderer.removeAllListeners('download-progress');
+    ipcRenderer.removeAllListeners('download-done');
+    ipcRenderer.removeAllListeners('download-warning');
+  },
+  getWallpaperDataUrl: (name) => ipcRenderer.invoke('get-wallpaper', name),
+  getBundledWallpapers: () => ipcRenderer.invoke('get-bundled-wallpapers'),
+  takeScreenshot: () => ipcRenderer.invoke('take-screenshot'),
+  ytSearch: (query) => ipcRenderer.invoke('yt-search', query),
+  getBeatPreload: () => ipcRenderer.invoke('get-beat-preload'),
+  webviewExecJs: (wcId, js, ms) => ipcRenderer.invoke('webview-execjs', { wcId, js, ms }),
+  kickCompositor: () => ipcRenderer.send('neo-kick-compositor'),
+  checkWebviewPainted: (rect) => ipcRenderer.invoke('neo-check-webview-paint', rect),
+  getGpuStatus: () => ipcRenderer.invoke('neo-gpu-status'),
+  getPerf: () => ipcRenderer.invoke('neo-perf'),
+  getPerfExternal: () => ipcRenderer.invoke('neo-perf-external'),
+  getSystemMemory: () => ipcRenderer.invoke('get-system-memory'),
+  onWebviewRecover: (cb) => ipcRenderer.on('webview-recover', () => cb()),
+  selectAppExe: () => ipcRenderer.invoke('select-app-exe'),
+  launchApp: (path) => ipcRenderer.invoke('launch-app', path),
+  setAdBlocking: (enabled) => ipcRenderer.send('set-ad-blocking', enabled),
+  selectVideoFile: () => ipcRenderer.invoke('select-video-file'),
+  readVideoFile: (path) => ipcRenderer.invoke('read-video-file', path),
+  // Download manager
+  getDownloadedFiles: () => ipcRenderer.invoke('get-downloaded-files'),
+  getDownloadPath: (name) => ipcRenderer.invoke('get-download-path', name),
+  getFileStats: (name) => ipcRenderer.invoke('get-file-stats', name),
+  setHwAccelPref: (value) => ipcRenderer.invoke('set-hw-accel-pref', value),
+  deleteDownloadedFile: (name) => ipcRenderer.invoke('delete-downloaded-file', name),
+  readDownloadedFile: (name) => ipcRenderer.invoke('read-downloaded-file', name),
+  openDownloadsFolder: () => ipcRenderer.invoke('open-downloads-folder'),
+  onDlMgrOpenFolder: (cb) => ipcRenderer.on('open-downloads-folder', () => cb()),
+  // YouTube downloader
+  getYTDownloadInfo: (url) => ipcRenderer.invoke('yt-download-info', url),
+  startYTDownload: (url, quality, meta) => ipcRenderer.invoke('yt-download-start', url, quality, meta),
+  cancelYTDownload: (id) => ipcRenderer.invoke('yt-download-cancel', id),
+  onYTDownloadProgress: (cb) => ipcRenderer.on('yt-download-progress', (e, d) => cb(d)),
+  removeYTDownloadListeners: () => {
+    ipcRenderer.removeAllListeners('yt-download-progress');
+  },
+  // Download metadata & AI categorization
+  getAllDownloadMeta: () => ipcRenderer.invoke('get-all-download-meta'),
+  saveDownloadMeta: (name, data) => ipcRenderer.invoke('save-download-meta', name, data),
+  aiCategorize: (title, channel) => ipcRenderer.invoke('ai-categorize', title, channel),
+  readThumbnailFile: (name) => ipcRenderer.invoke('read-thumbnail-file', name),
+  // Playlist system
+  playlistList: () => ipcRenderer.invoke('playlist-list'),
+  playlistCreate: (name) => ipcRenderer.invoke('playlist-create', name),
+  playlistDelete: (id) => ipcRenderer.invoke('playlist-delete', id),
+  playlistRename: (id, name) => ipcRenderer.invoke('playlist-rename', id, name),
+  playlistAddVideo: (id, fileName, meta) => ipcRenderer.invoke('playlist-add-video', id, fileName, meta),
+  playlistRemoveVideo: (id, fileName) => ipcRenderer.invoke('playlist-remove-video', id, fileName),
+  playlistGet: (id) => ipcRenderer.invoke('playlist-get', id),
+  playlistDuplicate: (id) => ipcRenderer.invoke('playlist-duplicate', id),
+  playlistExport: (id) => ipcRenderer.invoke('playlist-export', id),
+  playlistSort: (id, method) => ipcRenderer.invoke('playlist-sort', id, method),
+  playlistUpdateMeta: (id, meta) => ipcRenderer.invoke('playlist-update-meta', id, meta),
+  getUAOverrides: () => ipcRenderer.invoke('ua-get-overrides'),
+  setUAOverride: (domain, ua) => ipcRenderer.send('ua-set-override', domain, ua),
+  removeUAOverride: (domain) => ipcRenderer.send('ua-remove-override', domain),
+  launchInChrome: (url) => ipcRenderer.invoke('launch-in-chrome', url),
+  openLoginWindow: (url, opts) => ipcRenderer.send('open-login-window', url, opts || {}),
+  onLoginWindowClosed: (cb) => ipcRenderer.on('login-window-closed', () => cb()),
+  // Playback state persistence
+  savePlaybackState: (state) => ipcRenderer.invoke('save-playback-state', state),
+  loadPlaybackState: () => ipcRenderer.invoke('load-playback-state'),
+  // Screen recording video-end detection
+  injectVideoWatcher: () => ipcRenderer.invoke('inject-video-watcher'),
+  onVideoEnded: (cb) => ipcRenderer.on('video-ended', () => cb()),
+  removeVideoEndedListeners: () => { ipcRenderer.removeAllListeners('video-ended'); },
+  send: (channel, data) => ipcRenderer.send(channel, data),
+  // Screen recorder
+  recGetSources: () => ipcRenderer.invoke('rec-get-sources'),
+  recStartCapture: (sourceId, opts) => ipcRenderer.invoke('rec-start-capture', sourceId, opts),
+  recSaveRecording: (data) => ipcRenderer.invoke('rec-save-recording', data),
+  recGetRecordings: () => ipcRenderer.invoke('rec-get-recordings'),
+  recDeleteRecording: (name) => ipcRenderer.invoke('rec-delete-recording', name),
+  recRenameRecording: (oldName, newName) => ipcRenderer.invoke('rec-rename-recording', oldName, newName),
+  recExportRecording: (name, destPath, opts) => ipcRenderer.invoke('rec-export-recording', name, destPath, opts),
+  recShowSaveDialog: (opts) => ipcRenderer.invoke('rec-show-save-dialog', opts),
+  recGetStorageInfo: () => ipcRenderer.invoke('rec-get-storage-info'),
+  recSaveScreenshot: (data) => ipcRenderer.invoke('rec-save-screenshot', data),
+  recReadFile: (name) => ipcRenderer.invoke('rec-read-file', name),
+  recProbeDuration: (name) => ipcRenderer.invoke('rec-probe-duration', name),
+  recImportRecording: (src) => ipcRenderer.invoke('rec-import-recording', src),
+  recGetThumbnail: (name) => ipcRenderer.invoke('rec-get-thumbnail', name),
+  recOpenFolder: () => ipcRenderer.invoke('rec-open-folder'),
+  // ===== Account Manager Security =====
+  onDevtoolsChange: (cb) => {
+    ipcRenderer.on('devtools-changed', (e, open) => cb(open));
+    ipcRenderer.invoke('acct-sec-status').then(s => cb(s.devtoolsOpen)).catch(() => {});
+  },
+  getDevtoolsState: () => ipcRenderer.invoke('acct-sec-status'),
+  acctWipeVault: () => ipcRenderer.invoke('acct-sec-wipe'),
+  leetGetScript: () => ipcRenderer.invoke('leet-get-script'),
+  // ===== LeetCode Pop-out Floating Window =====
+  leetPopoutCreate: (data) => ipcRenderer.invoke('leet-popout-create', data),
+  leetPopoutDock: (chatHtml) => ipcRenderer.send('leet-popout-dock', chatHtml),
+  onLeetPopoutInit: (cb) => ipcRenderer.on('leet-popout-init', (e, data) => cb(data)),
+  onLeetPopoutDocked: (cb) => ipcRenderer.on('leet-popout-docked', (e, chatHtml) => cb(chatHtml)),
+
+});

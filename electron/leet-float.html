@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:rgba(10,10,22,0.98); color:#e0e0e0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; overflow:hidden; height:100vh; display:flex; flex-direction:column; }
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:2px; }
+  .float-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(15,15,30,0.95); border-bottom:1px solid rgba(255,255,255,0.06); -webkit-app-region:drag; user-select:none; flex-shrink:0; }
+  .float-header h2 { font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .float-header h2 svg { width:16px; height:16px; color:#64b4ff; }
+  .float-header .fh-actions { display:flex; gap:6px; -webkit-app-region:no-drag; }
+  .float-header .fh-btn { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 10px; color:rgba(255,255,255,0.5); cursor:pointer; font-size:11px; font-family:inherit; display:flex; align-items:center; gap:4px; transition:all 0.15s; }
+  .float-header .fh-btn:hover { background:rgba(255,255,255,0.08); color:#64b4ff; border-color:rgba(100,180,255,0.2); }
+  .float-header .fh-btn.fh-close:hover { color:#ff6b6b; border-color:rgba(255,107,107,0.2); }
+  .float-body { flex:1; display:flex; flex-direction:column; min-height:0; padding:10px 12px 8px; }
+  .float-messages { flex:1; overflow-y:auto; overflow-x:hidden; padding:4px 2px 8px; }
+  .float-messages .chat-msg { margin-bottom:8px; padding:10px 12px; border-radius:10px; font-size:13px; line-height:1.65; animation:fadeIn 0.25s ease-out; max-width:96%; }
+  .float-messages .chat-msg.user { background:rgba(100,180,255,0.08); border:1px solid rgba(100,180,255,0.1); margin-left:auto; }
+  .float-messages .chat-msg.bot { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); margin-right:auto; }
+  .float-messages .chat-msg .cm-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; opacity:0.5; }
+  .float-messages .chat-msg.user .cm-label { color:#64b4ff; }
+  .float-messages .chat-msg.bot .cm-label { color:rgba(255,255,255,0.3); }
+  .float-messages .chat-msg code { background:rgba(255,255,255,0.06); padding:1px 5px; border-radius:3px; font-size:12px; color:#64b4ff; }
+  .float-messages .chat-msg h1,.float-messages .chat-msg h2,.float-messages .chat-msg h3 { font-size:14px; font-weight:600; margin:8px 0 4px; color:#fff; }
+  .float-messages .chat-msg ul,.float-messages .chat-msg ol { margin:4px 0; padding-left:18px; }
+  .float-messages .chat-msg .lp-code-block { background:#0d1117; border:1px solid rgba(255,255,255,0.06); border-radius:10px; margin:6px 0; overflow:hidden; }
+  .float-messages .chat-msg .lp-cb-header { display:flex; justify-content:space-between; align-items:center; padding:5px 10px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.05); }
+  .float-messages .chat-msg .lp-cb-lang { font-size:10px; color:rgba(255,255,255,0.3); }
+  .float-messages .chat-msg .lp-cb-copy { background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; font-size:10px; display:flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; font-family:inherit; }
+  .float-messages .chat-msg .lp-cb-copy:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6); }
+  .float-messages .chat-msg .lp-cb-pre { margin:0; padding:10px 12px; overflow-x:auto; }
+  .float-messages .chat-msg .lp-cb-code { font-family:'Cascadia Code','Fira Code','JetBrains Mono',monospace; font-size:12px; line-height:1.6; color:#e6e6e6; white-space:pre; }
+  .float-messages .chat-empty { color:rgba(255,255,255,0.25); font-size:12px; text-align:center; padding:40px 20px; }
+  .float-messages .chat-empty svg { width:32px; height:32px; opacity:0.15; margin-bottom:8px; }
+  .float-messages .lp-chat-typing { display:flex; align-items:center; gap:10px; padding:10px 12px; color:rgba(255,255,255,0.3); font-size:12px; animation:fadeIn 0.2s ease-out; }
+  .float-messages .lp-chat-typing .lp-typing-dots { display:flex; gap:3px; }
+  .float-messages .lp-chat-typing .lp-typing-dots span { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.2); animation:typingBounce 1.2s ease-in-out infinite; }
+  .float-messages .lp-chat-typing .lp-typing-dots span:nth-child(2) { animation-delay:0.2s; }
+  .float-messages .lp-chat-typing .lp-typing-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes typingBounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-4px); } }
+  .float-composer { flex-shrink:0; border-top:1px solid rgba(255,255,255,0.05); padding:6px 0 2px; }
+  .float-composer textarea { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:9px 12px; color:#e0e0e0; font-size:13px; font-family:inherit; line-height:1.5; outline:none; resize:none; min-height:38px; max-height:130px; transition:border-color 0.15s; }
+  .float-composer textarea:focus { border-color:rgba(100,180,255,0.25); background:rgba(255,255,255,0.06); }
+  .float-composer textarea::placeholder { color:rgba(255,255,255,0.25); }
+  .float-composer .fc-bar { display:flex; justify-content:space-between; align-items:center; padding:5px 4px 0; }
+  .float-composer .fc-bar button { background:none; border:none; color:rgba(255,255,255,0.25); cursor:pointer; padding:3px 8px; border-radius:6px; font-size:12px; font-family:inherit; display:flex; align-items:center; gap:4px; transition:all 0.15s; }
+  .float-composer .fc-bar button:hover { color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.04); }
+  .float-composer .fc-bar .fc-send { background:rgba(100,180,255,0.15); border:1px solid rgba(100,180,255,0.15); color:#64b4ff; padding:4px 14px; border-radius:8px; font-weight:500; }
+  .float-composer .fc-bar .fc-send:hover { background:rgba(100,180,255,0.22); color:#7ec4ff; }
+  .float-problem-bar { flex-shrink:0; padding:6px 14px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; font-size:11px; }
+  .float-problem-bar .fp-diff { font-size:10px; font-weight:600; text-transform:uppercase; padding:1px 7px; border-radius:4px; }
+  .float-problem-bar .fp-diff.easy { background:rgba(0,200,83,0.15); color:#00c853; }
+  .float-problem-bar .fp-diff.medium { background:rgba(255,179,0,0.15); color:#ffb300; }
+  .float-problem-bar .fp-diff.hard { background:rgba(255,69,0,0.15); color:#ff4500; }
+  .float-problem-bar .fp-title { font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+</style>
+</head>
+<body>
+<div class="float-header">
+  <h2><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.05 3.74c-.44-.38-1.08-.38-1.52 0L2.3 11.7c-.44.38-.44 1 0 1.38l9.23 7.96c.44.38 1.08.38 1.52 0l9.23-7.96c.44-.38.44-1 0-1.38l-9.23-7.96z"/></svg> ESTA AI</h2>
+  <div class="fh-actions">
+    <button class="fh-btn" id="fhDockBtn" title="Dock back to main window"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg> Dock Back</button>
+    <button class="fh-btn fh-close" id="fhCloseBtn" title="Close"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+  </div>
+</div>
+<div class="float-problem-bar" id="floatProblemBar" style="display:none;">
+  <span class="fp-diff" id="fpDiff"></span>
+  <span class="fp-title" id="fpTitle"></span>
+</div>
+<div class="float-body">
+  <div class="float-messages" id="floatMessages">
+    <div class="chat-empty" id="floatEmpty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h0"/></svg>
+      <p>Ask a coding question to get started</p>
+    </div>
+  </div>
+  <div class="float-composer">
+    <textarea id="floatInput" rows="1" placeholder="Ask a coding question..."></textarea>
+    <div class="fc-bar">
+      <button id="fhClearBtn"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Clear</button>
+      <button class="fc-send" id="fhSendBtn">Ask ESTA <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+</div>
+<script>
+// Lazy-load the same formatting helpers from the main app
+function floatFormatAI(text) {
+  if (!text) return '<p style="color:rgba(255,255,255,0.3);">No response received.</p>';
+  var h = text;
+  var codeBlocks = [];
+  var idx = 0;
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, lang, code) {
+    var placeholder = '___CB_' + idx + '___';
+    codeBlocks.push({ lang: lang, code: code, idx: idx });
+    idx++;
+    return placeholder;
+  });
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  h = h.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  h = h.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/^- (.+)$/gm, '<li>$1</li>');
+  h = h.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  h = h.replace(/\n\n/g, '</p><p>');
+  h = h.replace(/\n/g, '<br>');
+  h = '<p>' + h + '</p>';
+  for (var i = 0; i < codeBlocks.length; i++) {
+    var b = codeBlocks[i];
+    var langLabel = b.lang ? '<span class="lp-cb-lang">' + b.lang + '</span>' : '';
+    var escapedCode = b.code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var codeHtml = '<div class="lp-code-block">'
+      + '<div class="lp-cb-header">' + langLabel
+      + '<button class="lp-cb-copy" onclick="floatCopyCode(this)" title="Copy code"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>'
+      + '</div>'
+      + '<pre class="lp-cb-pre"><code class="lp-cb-code">' + escapedCode + '</code></pre>'
+      + '</div>';
+    h = h.replace('___CB_' + b.idx + '___', codeHtml);
+  }
+  return h;
+}
+function floatCopyCode(btn) {
+  var block = btn.closest('.lp-code-block');
+  var code = block && block.querySelector('.lp-cb-code');
+  if (!code) return;
+  var text = code.textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
+      setTimeout(function() { btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy'; }, 2000);
+    }).catch(function(){});
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  }
+}
+function floatAddMsg(role, text) {
+  var el = document.getElementById('floatMessages');
+  var empty = document.getElementById('floatEmpty');
+  if (empty) empty.style.display = 'none';
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = '<div class="cm-label">' + (role === 'user' ? 'You' : 'ESTA') + '</div>' + floatFormatAI(text);
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+function floatSetThinking(on) {
+  var el = document.getElementById('floatMessages');
+  var existing = document.getElementById('floatTyping');
+  if (on) {
+    if (existing) return;
+    var div = document.createElement('div');
+    div.className = 'lp-chat-typing'; div.id = 'floatTyping';
+    div.innerHTML = '<div class="lp-typing-dots"><span></span><span></span><span></span></div><span>ESTA is thinking...</span>';
+    el.appendChild(div); el.scrollTop = el.scrollHeight;
+  } else {
+    if (existing) existing.remove();
+  }
+}
+function floatAutoGrow() {
+  var inp = document.getElementById('floatInput');
+  inp.style.height = 'auto';
+  var sh = inp.scrollHeight;
+  inp.style.height = Math.max(38, Math.min(sh, 130)) + 'px';
+}
+// --- Event handlers ---
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('floatInput');
+  var sendBtn = document.getElementById('fhSendBtn');
+  var clearBtn = document.getElementById('fhClearBtn');
+  var dockBtn = document.getElementById('fhDockBtn');
+  var closeBtn = document.getElementById('fhCloseBtn');
+
+  async function doSend() {
+    var msg = inp.value.trim();
+    if (!msg) return;
+    inp.value = ''; inp.style.height = 'auto';
+    floatAddMsg('user', msg);
+    floatSetThinking(true);
+    // Directly call backend
+    try {
+      var resp = await fetch('http://127.0.0.1:5000/api/leetcode/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: [] })
+      });
+      var data = await resp.json();
+      floatSetThinking(false);
+      if (data.success) floatAddMsg('bot', data.response);
+      else floatAddMsg('bot', 'Error: ' + (data.error || 'Backend unavailable'));
+    } catch(e) {
+      floatSetThinking(false);
+      floatAddMsg('bot', 'Error: Cannot reach backend. Is `python app.py` running on port 5000?');
+    }
+  }
+
+  if (sendBtn) sendBtn.addEventListener('click', doSend);
+  if (inp) {
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+    });
+    inp.addEventListener('input', floatAutoGrow);
+  }
+  if (clearBtn) clearBtn.addEventListener('click', function() {
+    document.getElementById('floatMessages').innerHTML = '<div class="chat-empty" id="floatEmpty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h0"/></svg><p>Ask a coding question to get started</p></div>';
+  });
+  if (closeBtn) closeBtn.addEventListener('click', function() { window.close(); });
+  if (dockBtn) dockBtn.addEventListener('click', function() {
+    // Send chat history back and close
+    var msgs = document.getElementById('floatMessages');
+    if (window.electronAPI && window.electronAPI.leetPopoutDock) {
+      window.electronAPI.leetPopoutDock(msgs.innerHTML);
+    }
+    window.close();
+  });
+
+  // Receive initial data from main window
+  if (window.electronAPI && window.electronAPI.onLeetPopoutInit) {
+    window.electronAPI.onLeetPopoutInit(function(data) {
+      if (data && data.problem) {
+        var bar = document.getElementById('floatProblemBar');
+        var diff = document.getElementById('fpDiff');
+        var title = document.getElementById('fpTitle');
+        if (bar) bar.style.display = 'flex';
+        if (diff) { diff.textContent = data.problem.difficulty || 'Easy'; diff.className = 'fp-diff ' + (data.problem.difficulty || 'easy').toLowerCase(); }
+        if (title) title.textContent = data.problem.title || '';
+      }
+      if (data && data.chatHtml) {
+        var el = document.getElementById('floatMessages');
+        el.innerHTML = data.chatHtml;
+        var empty = document.getElementById('floatEmpty');
+        if (empty) empty.style.display = el.querySelectorAll('.chat-msg').length > 0 ? 'none' : '';
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>

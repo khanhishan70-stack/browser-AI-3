@@ -1,0 +1,25 @@
+{
+  "name": "neobrowser",
+  "version": "1.0.0",
+  "description": "NeoBrowser – AI-powered browser by HISHAN KHAN",
+  "main": "main.js",
+  "scripts": {
+    "start": "set ELECTRON_RUN_AS_NODE=& electron .",
+    "dev": "set ELECTRON_RUN_AS_NODE=& electron . --dev",
+    "build": "npx @electron/packager . NEO --platform=win32 --arch=x64 --out=../dist --overwrite --asar.unpackDir=resources/WidevineCdm --electronVersion=42.3.3+wvcus"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "electron": "^42.3.0",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "adm-zip": "^0.5.18",
+    "dompurify": "^3.4.11",
+    "highlight.js": "^11.11.1",
+    "marked": "^12.0.1",
+    "ytdl-core": "^4.11.5"
+  }
+}

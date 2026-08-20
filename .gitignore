@@ -1,0 +1,77 @@
+node_modules/
+venv/
+__pycache__/
+*.pyc
+
+# Large binary files
+*.dll
+*.pak
+*.bin
+*.dat
+*.exe
+*.node
+*.so
+*.dylib
+*.vdi
+*.iso
+*.whl
+
+# Media files (too large for git)
+*.mp4
+*.mp3
+*.wav
+*.webm
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+
+# Images (user downloads, not source)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.ico
+*.webp
+*.svg
+
+# Electron build artifacts
+dist/
+out/
+*.spec
+electron/dist/
+electron/out/
+
+# Logs
+*.log
+error_log.txt
+output_log.txt
+NEO_TEST_LOG.txt
+grok_logs.csv
+
+# Temp & misc
+UsersAdminAppDataLocalTemp/
+Neo Browser.spec
+version
+vk_swiftshader_icd.json
+LICENSES.chromium.html
+
+# Generated files
+1781621512*-player-script.js
+1781887452*-player-script.js
+
+# Backend runtime
+ai UI DESIGN/backend/memory/
+ai UI DESIGN/backend/vault/
+ai UI DESIGN/backend/neo_accounts/
+ai UI DESIGN/backend/generated_code/
+ai UI DESIGN/backend/documents/
+ai UI DESIGN/backend/editor_assets/
+ai UI DESIGN/backend/browser_state.json
+ai UI DESIGN/backend/server.err.log
+ai UI DESIGN/backend/server.out.log
+
+# Project folders with node_modules
+Professional Website Design (1)/
