@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 REM ============================================================
-REM  NEO BROWSER - ONE-CLICK LAUNCHER
+REM  NEXORA BROWSER - ONE-CLICK LAUNCHER
 REM  Starts:  1) Offline AI (Ollama)   2) AI backend   3) Browser
 REM ============================================================
 

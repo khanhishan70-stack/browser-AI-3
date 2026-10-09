@@ -36,7 +36,8 @@ Write-Host '   Build OK.' -ForegroundColor Green
 
 # 1.5) Strip stale build copies that leak into resources\app (packager ignore is unreliable)
 $appDir = Join-Path $base 'dist\NEXORA-win32-x64\resources\app'
-foreach ($junk in @('dist_v2', 'dist_v2_COPY', 'dist_new', 'dist', 'vendor', '.git')) {
+# NOTE: vendor/ (highlight.js) is a real runtime asset of ai-browser.html - keep it.
+foreach ($junk in @('dist_v2', 'dist_v2_COPY', 'dist_new', 'dist', '.git')) {
   Remove-Item (Join-Path $appDir $junk) -Recurse -Force -ErrorAction SilentlyContinue
 }
 
@@ -55,11 +56,16 @@ $srcBackend = Join-Path $base 'ai UI DESIGN\backend'
 $dstBackend = Join-Path $stageRoot 'ai UI DESIGN\backend'
 New-Item -ItemType Directory -Path $dstBackend -Force | Out-Null
 Get-ChildItem $srcBackend -Force | ForEach-Object {
-  $skip = $_.Name -in @('venv', '__pycache__', '.git')
-  if ($_.PSIsContainer -and $skip) { Write-Host "   skipped folder: $($_.Name)" ; return }
-  if (-not $_.PSIsContainer -and $_.Name -like '*.log') { Write-Host "   skipped log: $($_.Name)"; return }
+  # NEVER ship private runtime data: real .env secrets, user accounts, memory,
+  # vault, documents, or machine state. New users get .env.example instead.
+  $skipDir = $_.Name -in @('venv', '__pycache__', '.git', 'neo_accounts', 'memory', 'vault', 'documents', 'editor_assets', 'rag_docs', 'generated_code')
+  if ($_.PSIsContainer -and $skipDir) { Write-Host "   skipped private folder: $($_.Name)" ; return }
+  $skipFile = ($_.Name -like '*.log') -or ($_.Name -eq '.env') -or ($_.Name -like '*_state.json') -or ($_.Name -in @('browser_state.json', 'offline_ai_state.json', 'ai_memory.json', 'esta_memory.json', 'server.err.log', 'server.out.log'))
+  if (-not $_.PSIsContainer -and $skipFile) { Write-Host "   skipped private file: $($_.Name)"; return }
   Copy-Item -Recurse $_.FullName (Join-Path $dstBackend $_.Name)
 }
+# Ship the blank template so first run can create a real .env from it
+Copy-Item (Join-Path $srcBackend '.env.example') (Join-Path $dstBackend '.env.example')
 
 # Launcher
 Copy-Item (Join-Path $base 'launch.bat') (Join-Path $stageRoot 'launch.bat')
