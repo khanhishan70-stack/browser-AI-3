@@ -1759,7 +1759,9 @@ def ask_ai(question, personality=None, style=None, page_context="", url="", allo
     except Exception as e:
         print(f"[AI] Ollama fallback failed: {e}")
 
-    return "I'm having trouble connecting to the AI right now. Please try again in a moment."
+    return ("I'm offline right now (no cloud key and no local model reachable). "
+            "Run launch.bat once - it sets up the free offline AI automatically - "
+            "or add a GROQ_API_KEY in backend/.env for cloud chat.")
 
 LIVE_SEARCH_INSTRUCTION = """
 ## You HAVE Live Web Access (IMPORTANT)

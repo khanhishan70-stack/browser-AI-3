@@ -59,11 +59,28 @@ if %tries% LSS 30 goto wait_ollama
 echo    WARNING: Ollama did not start within 30s.
 goto ollama_done
 :ollama_missing
-echo    WARNING: Ollama not installed. Offline AI unavailable.
+echo    Ollama not found - installing it automatically (one time, free)...
+where winget >nul 2>&1
+if %ERRORLEVEL% NEQ 0 goto ollama_manual
+winget install -e --id Ollama.Ollama --silent --accept-package-agreements --accept-source-agreements
+if not exist "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" goto ollama_manual
+echo    Launching Ollama...
+start /min "Ollama server" "%LOCALAPPDATA%\Programs\Ollama\ollama.exe" serve
+set tries=0
+goto wait_ollama
+:ollama_manual
+echo    WARNING: automatic install failed. Offline AI unavailable.
 echo    Install from https://ollama.com then run: ollama pull qwen3:1.7b
 goto ollama_done
 :ollama_ready
 echo    Ollama ready on :11434
+REM Free offline model, present forever after the first download (~1.2 GB, one time).
+set OLLAMA_BIN=%LOCALAPPDATA%\Programs\Ollama\ollama.exe
+if not exist "%OLLAMA_BIN%" set OLLAMA_BIN=ollama
+"%OLLAMA_BIN%" list 2>nul | findstr /c:"qwen3:1.7b" >nul
+if %ERRORLEVEL% EQU 0 goto ollama_done
+echo    First run: downloading the free offline AI model (one time)...
+"%OLLAMA_BIN%" pull qwen3:1.7b
 :ollama_done
 
 REM ---- [3/4] Start AI backend ----
