@@ -57,6 +57,29 @@
   document.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
+  // ---- Spotify apology popup (once per visitor) ----
+  var sp = document.getElementById('spotifyNotice');
+  var spClose = document.getElementById('spotifyClose');
+  function hideSp() {
+    if (!sp) return;
+    sp.classList.remove('show');
+    try { localStorage.setItem('nexora_spotify_notice', '1'); } catch (e) {}
+    setTimeout(function () { sp.hidden = true; }, 300);
+  }
+  if (sp) {
+    var seen = false;
+    try { seen = localStorage.getItem('nexora_spotify_notice') === '1'; } catch (e) {}
+    if (!seen) {
+      sp.hidden = false;
+      setTimeout(function () { sp.classList.add('show'); }, 1200);
+    }
+    if (spClose) spClose.addEventListener('click', hideSp);
+    sp.addEventListener('click', function (e) { if (e.target === sp) hideSp(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !sp.hidden) hideSp();
+    });
+  }
+
   // ---- Mobile nav ----
   var burger = document.getElementById('navBurger');
   var links = document.getElementById('navLinks');
