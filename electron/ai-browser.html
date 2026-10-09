@@ -14236,6 +14236,19 @@
       </div>
     </div>
 
+    <!-- ===== SPOTIFY NOTICE (web player unsupported) ===== -->
+    <div id="spotifyOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999990;background:rgba(8,10,25,0.82);backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;font-family:inherit;color:#fff;">
+      <div style="text-align:center;max-width:400px;width:calc(100% - 60px);background:rgba(255,255,255,0.03);border:1px solid rgba(0,255,249,0.2);border-radius:16px;padding:28px 22px;box-shadow:0 18px 60px rgba(0,0,0,0.6);">
+        <div style="font-size:40px;margin-bottom:10px;">&#x1f3a7;</div>
+        <div style="font-size:17px;font-weight:700;margin-bottom:6px;">A quick note for music lovers</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:18px;line-height:1.6;">We&apos;re really sorry &#8212; NEXORA can&apos;t play Spotify right now due to a playback issue we&apos;re working on. For the best music, grab the Spotify desktop app.</div>
+        <div style="display:flex;gap:8px;">
+          <button id="spotifyDlBtn" style="background:rgba(0,255,249,0.12);border:1px solid rgba(0,255,249,0.25);border-radius:8px;color:#00fff9;padding:10px 0;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;flex:1.4;">&#x2193; Spotify Desktop</button>
+          <button id="spotifyCloseBtn" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;padding:10px 0;font-size:12px;font-family:inherit;cursor:pointer;flex:1;">Got it</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== PHISHING WARNING OVERLAY ===== -->
     <div id="phishOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;background:rgba(10,0,20,0.92);backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;font-family:inherit;color:#fff;">
       <div style="text-align:center;max-width:520px;padding:30px;">
@@ -15540,6 +15553,7 @@
         if (wv === siteWebview) {
           urlInput.value = e.url;
           updateTabTitleFromUrl(e.url);
+          try { _spotifyMaybeShow(e.url); } catch(_e5) {}
         }
         if (wv === siteWebview && e.url.indexOf('spotify.com') === -1 && window._drmHintEl) { try { window._drmHintEl.remove(); window._drmHintEl = null; } catch(_e2) {} }
         // Auto-translate: new page loaded -> translate it into the saved language
@@ -23789,7 +23803,34 @@
     if (e.key === 'Escape') {
       var p = document.getElementById('webHistoryPanel');
       if (p && p.classList.contains('visible')) _webHistClose();
+      if (typeof _spotifyHide === 'function') _spotifyHide();
     }
+  });
+
+  // ===== SPOTIFY NOTICE (web player unsupported - show once per session) =====
+  var _spotifyShown = false;
+  function _spotifyHide() {
+    var ov = document.getElementById('spotifyOverlay');
+    if (ov) ov.style.display = 'none';
+  }
+  function _spotifyMaybeShow(url) {
+    if (_spotifyShown) return;
+    var host = '';
+    try { host = new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch(e) { return; }
+    if (!/(^|\.)spotify\.com$/.test(host)) return;
+    _spotifyShown = true;
+    var ov = document.getElementById('spotifyOverlay');
+    if (ov) ov.style.display = 'flex';
+  }
+  document.getElementById('spotifyCloseBtn').addEventListener('click', _spotifyHide);
+  document.getElementById('spotifyOverlay').addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'spotifyOverlay') _spotifyHide();
+  });
+  document.getElementById('spotifyDlBtn').addEventListener('click', function() {
+    try {
+      if (window.electronAPI && window.electronAPI.launchInChrome) window.electronAPI.launchInChrome('https://www.spotify.com/download/');
+    } catch(e) {}
+    _spotifyHide();
   });
   document.addEventListener('click', function(e) {
     var pop = document.getElementById('sitePopup');
