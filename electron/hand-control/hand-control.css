@@ -1,0 +1,217 @@
+/* ===== NEO Hand Control - styles =====
+   No layout of existing NEO UI is changed. All elements are fixed/absolute
+   overlays with pointer-events:none (except the camera preview controls). */
+
+#neo-hand-focus {
+  position: fixed;
+  z-index: 2147480000;
+  pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 9px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.55), 0 0 22px rgba(255, 255, 255, 0.28), inset 0 0 6px rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  will-change: left, top, width, height;
+  -webkit-transition: left 120ms cubic-bezier(0.2, 0.7, 0.3, 1), top 120ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    width 120ms cubic-bezier(0.2, 0.7, 0.3, 1), height 120ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 90ms linear;
+  transition: left 120ms cubic-bezier(0.2, 0.7, 0.3, 1), top 120ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    width 120ms cubic-bezier(0.2, 0.7, 0.3, 1), height 120ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 90ms linear;
+}
+
+#neo-hand-focus.ready { opacity: 1; }
+
+#neo-hand-focus.page-target {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+#neo-hand-focus.pulse {
+  -webkit-animation: neoHandPulse 260ms ease-out;
+  animation: neoHandPulse 260ms ease-out;
+}
+
+@-webkit-keyframes neoHandPulse {
+  0%   { box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 26px rgba(255,255,255,0.8); -webkit-transform: scale(1); }
+  50%  { box-shadow: 0 0 0 7px rgba(255,255,255,0.85), 0 0 45px rgba(255,255,255,0.95); -webkit-transform: scale(1.05); }
+  100% { box-shadow: 0 0 8px rgba(255,255,255,0.55), 0 0 22px rgba(255,255,255,0.28); -webkit-transform: scale(1); }
+}
+@keyframes neoHandPulse {
+  0%   { box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 26px rgba(255,255,255,0.8); transform: scale(1); }
+  50%  { box-shadow: 0 0 0 7px rgba(255,255,255,0.85), 0 0 45px rgba(255,255,255,0.95); transform: scale(1.05); }
+  100% { box-shadow: 0 0 8px rgba(255,255,255,0.55), 0 0 22px rgba(255,255,255,0.28); transform: scale(1); }
+}
+
+#neo-hand-pulse-ring {
+  position: fixed;
+  z-index: 2147480001;
+  pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  opacity: 0;
+}
+
+#neo-hand-pulse-ring.go { opacity: 1; -webkit-animation: neoHandRing 320ms ease-out; animation: neoHandRing 320ms ease-out; }
+
+@-webkit-keyframes neoHandRing { 0% { -webkit-transform: scale(0.4); opacity: 1; } 100% { -webkit-transform: scale(1.7); opacity: 0; } }
+@keyframes neoHandRing { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }
+
+#neo-hand-cursor {
+  position: fixed;
+  z-index: 2147480000;
+  pointer-events: none;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 0.45);
+  opacity: 0;
+  will-change: transform;
+}
+#neo-hand-cursor::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+#neo-hand-cursor.ready { opacity: 1; }
+
+/* Floating status pill (bottom-center-left) */
+#neo-hand-status {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2147480000;
+  display: none;
+  -webkit-box-align: center;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 9px;
+  font: 500 11px/1.2 'Inter', system-ui, sans-serif;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(10, 12, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+#neo-hand-status.visible { display: -webkit-box; display: flex; }
+#neo-hand-status .nhs-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.9);
+}
+#neo-hand-status.warn .nhs-dot { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.9); }
+#neo-hand-status.err .nhs-dot { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.9); }
+#neo-hand-status.secondary .nhs-dot { background: #a78bfa; box-shadow: 0 0 8px rgba(167, 139, 250, 0.9); }
+
+/* Camera preview (bottom-right, draggable header) */
+#neo-hand-preview {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2147480000;
+  width: 208px;
+  background: rgba(8, 10, 16, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+#neo-hand-preview.minimized { width: auto; }
+#neo-hand-preview .nhp-bar {
+  display: -webkit-box; display: flex;
+  -webkit-box-align: center; align-items: center;
+  height: 24px;
+  padding: 0 6px 0 9px;
+  gap: 6px;
+  cursor: -webkit-grab; cursor: grab;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  -webkit-user-select: none; user-select: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+#neo-hand-preview .nhp-label { -webkit-box-flex: 1; flex: 1; }
+#neo-hand-preview .nhp-min, #neo-hand-preview .nhp-close {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#neo-hand-preview .nhp-min:hover, #neo-hand-preview .nhp-close:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+#neo-hand-preview .nhp-body { position: relative; }
+#neo-hand-preview video {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  background: #000;
+}
+#neo-hand-preview.minimized .nhp-body { display: none; }
+#neo-hand-preview .nhp-overlay {
+  position: absolute;
+  inset: 0;
+  display: -webkit-box; display: flex;
+  -webkit-box-align: center; align-items: center;
+  -webkit-box-pack: center; justify-content: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.5);
+  text-align: center;
+  padding: 6px;
+}
+
+/* Debug panel (top center) */
+#neo-hand-debug {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  z-index: 2147480000;
+  display: none;
+  pointer-events: none;
+  background: rgba(6, 8, 14, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: 9.5px/1.5 ui-monospace, 'Cascadia Code', Consolas, monospace;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-wrap;
+  min-width: 210px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#neo-hand-debug.visible { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  #neo-hand-focus { -webkit-transition: opacity 0ms; transition: opacity 0ms; }
+  #neo-hand-focus.pulse, #neo-hand-pulse-ring.go { -webkit-animation: none; animation: none; }
+}

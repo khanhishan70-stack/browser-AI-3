@@ -1,4 +1,11 @@
 {
+  "name": "nexora-root",
+  "version": "1.0.0",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "set ELECTRON_RUN_AS_NODE=& electron electron/main.js",
+    "dev": "set ELECTRON_RUN_AS_NODE=& electron electron/main.js --dev"
+  },
   "dependencies": {
     "electron": "^42.2.0"
   },

@@ -53,7 +53,7 @@ grok_logs.csv
 
 # Temp & misc
 UsersAdminAppDataLocalTemp/
-Neo Browser.spec
+NEXORA Browser.spec
 version
 vk_swiftshader_icd.json
 LICENSES.chromium.html
@@ -61,6 +61,8 @@ LICENSES.chromium.html
 # Generated files
 1781621512*-player-script.js
 1781887452*-player-script.js
+17813743*-player-script.js
+*-player-script.js
 
 # Backend runtime
 ai UI DESIGN/backend/memory/
@@ -69,9 +71,59 @@ ai UI DESIGN/backend/neo_accounts/
 ai UI DESIGN/backend/generated_code/
 ai UI DESIGN/backend/documents/
 ai UI DESIGN/backend/editor_assets/
+ai UI DESIGN/backend/rag_docs/
 ai UI DESIGN/backend/browser_state.json
+ai UI DESIGN/backend/offline_ai_state.json
+ai UI DESIGN/backend/ai_memory.json
+ai UI DESIGN/backend/esta_memory.json
 ai UI DESIGN/backend/server.err.log
 ai UI DESIGN/backend/server.out.log
 
+# Secrets must never be committed (keys, tokens, env files, encrypted blobs)
+ai UI DESIGN/backend/.env
+ai UI DESIGN/backend/.env.*
+electron/.env
+electron/.env.*
+!electron/.env.example
+!ai UI DESIGN/backend/.env.example
+*.enc
+.vault_key
+neo_accounts/
+vault/
+
 # Project folders with node_modules
 Professional Website Design (1)/
+
+# Local-only heavies: release zips, AI models, build-output copies (GitHub
+# rejects files >100MB; these range from 300MB to 2.4GB)
+*.zip
+*.gguf
+_internal/
+electron/dist_new/
+electron/dist_v2*/
+electron/resources/
+neo logo AI video/
+electron/$null
+$null
+
+# Scratch / session notes (not source)
+anchored_summary.md
+deep_compare.js
+backend.log.err
+backend.log.txt
+temp_*.txt
+temp_*.js
+temp_*.log
+fwd
+main.py
+
+# Backend dev/test scratch (implementation files like neo_auth.py ARE committed)
+ai UI DESIGN/backend/_test_*.py
+ai UI DESIGN/backend/test_*.py
+ai UI DESIGN/backend/_make_fixtures.py
+ai UI DESIGN/backend/check_cleanup.py
+ai UI DESIGN/backend/diagnostic_test.py
+ai UI DESIGN/backend/rag_probe.py
+ai UI DESIGN/backend/fixtures/
+ai UI DESIGN/backend/.neo_backend.lock
+ai UI DESIGN/.vscode/

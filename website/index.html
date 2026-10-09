@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORA Browser — THE WEB, REIMAGINED.</title>
+<meta name="description" content="NEXORA Browser — a modern desktop browsing experience designed for speed, productivity, customization, and AI-powered workflows.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0c10'/%3E%3Cpath d='M18 46V18l28 28V18' stroke='%2300fff9' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="orb orb-a" aria-hidden="true"></div>
+<div class="orb orb-b" aria-hidden="true"></div>
+<div class="orb orb-c" aria-hidden="true"></div>
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="NEXORA home">
+    <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0d1512"/><path d="M18 46V18l28 28V18" stroke="#00fff9" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="brand-word">NEXORA<em>BROWSER</em></span>
+  </a>
+  <nav class="nav-links" id="navLinks" aria-label="Primary">
+    <a href="#features">Features</a>
+    <a href="#esta">AI Experience</a>
+    <a href="#privacy">Privacy &amp; Security</a>
+    <a href="#screens">Screenshots</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="nav-actions">
+    <button class="btn btn-ghost" data-github>GitHub</button>
+    <button class="btn btn-primary" data-download>Download</button>
+    <button class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="top">
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="kicker">Meet NEXORA Browser.</p>
+      <h1>THE WEB,<br>REIMAGINED.</h1>
+      <p class="lede">A modern desktop browsing experience designed for speed, productivity, customization, and AI-powered workflows.</p>
+      <div class="cta-row">
+        <button class="btn btn-primary btn-lg" data-download>Download NEXORA</button>
+        <a class="btn btn-outline btn-lg" href="#features">Explore Features</a>
+      </div>
+      <p class="hero-note"><button class="linklike" data-github>View on GitHub</button> <span aria-hidden="true">·</span> <span id="heroReleaseNote">First public release coming soon.</span></p>
+    </div>
+    <div class="hero-visual" aria-label="NEXORA Browser interface preview (illustrative mockup)">
+      <!-- Stylised desktop browser mockup (pure CSS, illustrative) -->
+      <div class="mock-window">
+        <div class="mock-titlebar"><span class="tdot r"></span><span class="tdot y"></span><span class="tdot g"></span><span class="mock-brand">NEXORA</span></div>
+        <div class="mock-body">
+          <div class="mock-rail">
+            <span class="mock-vtab on"></span><span class="mock-vtab"></span><span class="mock-vtab"></span><span class="mock-vtab"></span>
+            <span class="mock-fan"><span class="mock-card c1"></span><span class="mock-card c2"></span><span class="mock-card c3"></span></span>
+          </div>
+          <div class="mock-main">
+            <div class="mock-nav"><span class="mock-btn"></span><span class="mock-btn"></span><span class="mock-btn"></span><span class="mock-url">nexora — new tab</span><span class="mock-cam" title="camera"></span></div>
+            <div class="mock-page">
+              <div class="mock-clock">09:41</div>
+              <div class="mock-search"></div>
+              <div class="mock-tiles"><span></span><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="mock-esta">
+            <div class="mock-esta-head"><span class="mock-pulse"></span>ESTA AI</div>
+            <div class="mock-msg me">Summarise this page for me.</div>
+            <div class="mock-msg ai">Done — here are the 3 key points…</div>
+            <div class="mock-input"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div><strong>8+</strong><span>built-in productivity tools</span></div>
+    <div><strong>1-click</strong><span>camera · mic · screen access</span></div>
+    <div><strong>100%</strong><span>local-first browsing data</span></div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true"><div class="marquee-track">
+<span>VERTICAL TABS <b>✦</b></span><span>ESTA AI <b>✦</b></span><span>TAB PREVIEW FAN <b>✦</b></span><span>HISTORY LOCK <b>✦</b></span><span>SHIELDS <b>✦</b></span><span>1-CLICK CALLS <b>✦</b></span><span>VOLUME BOOST <b>✦</b></span><span>VERTICAL TABS <b>✦</b></span><span>ESTA AI <b>✦</b></span><span>TAB PREVIEW FAN <b>✦</b></span><span>HISTORY LOCK <b>✦</b></span><span>SHIELDS <b>✦</b></span><span>1-CLICK CALLS <b>✦</b></span><span>VOLUME BOOST <b>✦</b></span>
+</div></div>
+
+<!-- ================= FEATURES ================= -->
+<section class="section" id="features">
+  <p class="kicker">Features</p>
+  <h2>EVERYTHING YOU NEED.<br>NOTHING IN YOUR WAY.</h2>
+  <p class="sub">Every card below is a real, working part of NEXORA Browser — not a concept.</p>
+  <div class="cards">
+    <article class="card reveal"><div class="card-ico">🗂️</div><h3>Vertical Tabs, Reimagined</h3><p>A slim icon rail keeps every site one click away, with lazy loading so background tabs stay light.</p></article>
+    <article class="card reveal"><div class="card-ico">🪟</div><h3>Stage Manager Tab Previews</h3><p>Hover any tab and a tilted stack of live page previews fans out — recognise any page at a glance, click a card to jump to it.</p></article>
+    <article class="card reveal"><div class="card-ico">✨</div><h3>ESTA AI Assistant</h3><p>ESTA lives in a side panel: chat, page summaries, coding help and offline chat, powered by the local NEXORA backend.</p></article>
+    <article class="card reveal"><div class="card-ico">🕓</div><h3>Chrome-Style History + Lock</h3><p>Full-page history grouped by day with search and one-click reopen — protected by your own history password.</p></article>
+    <article class="card reveal"><div class="card-ico">🎥</div><h3>Calls That Just Work</h3><p>One toolbar button shows camera, microphone and screen-share status. Approvals are automatic, so Meet, Discord and WhatsApp calls connect instantly.</p></article>
+    <article class="card reveal"><div class="card-ico">⬇️</div><h3>Download Manager</h3><p>Built-in download panel with history, plus a YouTube saver and a picture-to-PDF converter in the side rail.</p></article>
+    <article class="card reveal"><div class="card-ico">🛡️</div><h3>Shields &amp; Safety</h3><p>Built-in ad &amp; tracker blocking, AI phishing checks and per-site permission controls with an allow/block popup.</p></article>
+    <article class="card reveal"><div class="card-ico">🧰</div><h3>Toolbox Rail</h3><p>Translator, volume boost to 300%, hands-free voice, Pomodoro timer, LeetCode tutor, video editor and offline AI — docked on the right, each with hover previews.</p></article>
+    <article class="card reveal"><div class="card-ico">🎨</div><h3>Make It Yours</h3><p>Custom wallpapers, themes, layouts and a NEXORA account with encrypted backup sync across your PCs.</p></article>
+  </div>
+</section>
+
+<!-- ================= ESTA ================= -->
+<section class="section esta" id="esta">
+  <div class="esta-copy">
+    <p class="kicker">ESTA AI</p>
+    <h2>YOUR BROWSER.<br>WITH INTELLIGENCE BUILT IN.</h2>
+    <p class="sub">Meet ESTA, your AI-powered browsing companion.</p>
+    <ul class="esta-list">
+      <li><strong>Conversations</strong> — ask anything in the side panel, without leaving your page.</li>
+      <li><strong>Page help</strong> — summaries and explanations of what you're reading.</li>
+      <li><strong>Code &amp; study</strong> — debugging help, LeetCode walkthroughs, learning tutor.</li>
+      <li><strong>Offline mode</strong> — chat with an on-device model when you're offline.*</li>
+    </ul>
+    <p class="fine">* AI features run through the NEXORA backend app on your PC. Sample chat shown is an illustrative demo.</p>
+    <div class="cta-row"><a class="btn btn-primary" href="#screens">Discover ESTA</a></div>
+  </div>
+  <div class="esta-visual" aria-label="ESTA conversation preview (illustrative mockup)">
+    <div class="chat-mock">
+      <div class="chat-head"><span class="mock-pulse"></span>ESTA AI <em>· browsing companion</em></div>
+      <div class="chat-body">
+        <div class="mock-msg me">What is this article about?</div>
+        <div class="mock-msg ai">It's a guide to urban gardening — here are the 3 key takeaways: 1) start with herbs, 2) …</div>
+        <div class="mock-msg me">Turn that into a weekend checklist.</div>
+        <div class="mock-msg ai typing"><span></span><span></span><span></span></div>
+      </div>
+      <div class="mock-input"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SCREENSHOTS ================= -->
+<section class="section" id="screens">
+  <p class="kicker">Showcase</p>
+  <h2>SEE NEXORA UP CLOSE.</h2>
+  <p class="sub">Interface previews of the real browser. Click any preview to enlarge. <em>Illustrative mockups drawn from the actual UI — real screenshots ship with v1.0.</em></p>
+  <div class="shots">
+    <figure class="shot reveal" data-shot="tabs"><div class="shot-mini mini-tabs"><span class="m-fan"><span></span><span></span><span></span></span></div><figcaption><strong>Tab preview fan</strong><span>Hover any tab — live pages fan out.</span></figcaption></figure>
+    <figure class="shot reveal" data-shot="esta"><div class="shot-mini mini-esta"><span class="m-line w80"></span><span class="m-line w60"></span><span class="m-line w70"></span></div><figcaption><strong>ESTA assistant</strong><span>Always-on AI side panel.</span></figcaption></figure>
+    <figure class="shot reveal" data-shot="history"><div class="shot-mini mini-hist"><span class="m-line w90"></span><span class="m-line w75"></span><span class="m-lock">🔒 password protected</span></div><figcaption><strong>History, locked</strong><span>Full-page log behind your password.</span></figcaption></figure>
+    <figure class="shot reveal" data-shot="tools"><div class="shot-mini mini-tools"><span class="m-tool"></span><span class="m-tool"></span><span class="m-tool"></span><span class="m-tool"></span></div><figcaption><strong>Toolbox rail</strong><span>Downloader, translate &amp; more.</span></figcaption></figure>
+  </div>
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Preview enlarged" hidden>
+    <div class="lightbox-card"><div id="lightboxBody"></div><p id="lightboxCap"></p><button class="btn btn-outline" id="lightboxClose">Close</button></div>
+  </div>
+</section>
+
+<!-- ================= DOWNLOAD ================= -->
+<section class="section download" id="download">
+  <p class="kicker">Get NEXORA</p>
+  <h2>READY TO EXPLORE<br>WHAT'S NEXT?</h2>
+  <p class="sub">Get NEXORA Browser and experience a new approach to desktop browsing.</p>
+  <div class="dl-card">
+    <div class="dl-info" id="dlInfo"><strong>First public release — coming soon.</strong><span>Version, size and system requirements will be published with the first official installer. Download NEXORA only from official release sources.</span></div>
+    <div class="cta-row">
+      <button class="btn btn-primary btn-lg" data-download>Download for Windows</button>
+      <button class="btn btn-outline btn-lg" data-github>View Source on GitHub</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRIVACY ================= -->
+<section class="section" id="privacy">
+  <p class="kicker">Privacy &amp; Security</p>
+  <h2>YOUR BROWSER DESERVES TRANSPARENCY.</h2>
+  <div class="cards two">
+    <article class="card reveal"><div class="card-ico">💾</div><h3>Local-first data</h3><p>History, downloads, permissions and settings live in your own profile folder on your PC — not on our servers. Sync only happens if you create a NEXORA account and turn it on.</p></article>
+    <article class="card reveal"><div class="card-ico">🔐</div><h3>You hold the keys</h3><p>Your browsing history page is guarded by a password you set. Per-site camera, mic and screen permissions can be allowed or blocked at any time.</p></article>
+    <article class="card reveal"><div class="card-ico">🧹</div><h3>Less tracking surface</h3><p>Built-in ad &amp; tracker blocking and AI-assisted phishing warnings reduce common web annoyances and traps. No browsing analytics are collected by the browser itself.</p></article>
+    <article class="card reveal"><div class="card-ico">🔍</div><h3>Honest security status</h3><p>NEXORA is pre-release software. Independent security verification is incomplete, so we make no "unhackable" claims. Found an issue? Report it — contact details will be published with the first release.</p></article>
+  </div>
+  <p class="fine">Privacy Policy and Security Policy documents will be published alongside the first public release.</p>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="section" id="faq">
+  <p class="kicker">FAQ</p>
+  <h2>QUESTIONS, ANSWERED.</h2>
+  <div class="faq">
+    <details class="reveal"><summary>Which operating systems will NEXORA support?</summary><p>The first official installer targets Windows 64-bit. Other platforms have not been announced yet.</p></details>
+    <details class="reveal"><summary>Is NEXORA Browser free?</summary><p>Yes — the browser is planned as a free download, with its source code published on GitHub.</p></details>
+    <details class="reveal"><summary>Where do I download it safely?</summary><p>Only from the official release page linked on this site. Until the first release is published, the download button stays disabled — never trust third-party "NEXORA installers".</p></details>
+    <details class="reveal"><summary>Does ESTA AI send my browsing to the cloud?</summary><p>ESTA runs through the NEXORA backend on your own PC, including an offline on-device chat mode. Cloud model providers are never mandatory — check the release notes for the default configuration.</p></details>
+    <details class="reveal"><summary>How does the history password work?</summary><p>Set it in Settings → History Lock. The full history page then asks for that password before showing anything. Turn the lock off and it opens directly.</p></details>
+    <details class="reveal"><summary>Can I trust pre-release software with my logins?</summary><p>Be sensible: NEXORA stores logins with your OS-level browser profile like other Chromium browsers, but independent security review is still pending. Use a password manager and unique passwords everywhere.</p></details>
+  </div>
+</section>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="foot-inner">
+    <a class="brand" href="#top"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0d1512"/><path d="M18 46V18l28 28V18" stroke="#00fff9" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brand-word">NEXORA<em>BROWSER</em></span></a>
+    <nav class="foot-links" aria-label="Footer">
+      <a href="#features">Features</a><a href="#esta">ESTA</a><a href="#screens">Screenshots</a><a href="#download">Download</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
+    </nav>
+    <p class="fine">© 2026 NEXORA. Pre-release project website — release details, policies and repository links go live with v1.0.</p>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

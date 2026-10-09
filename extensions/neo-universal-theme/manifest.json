@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Neo Universal Theme",
+  "version": "1.0.0",
+  "description": "Force almost any website into Dark, Light, or Auto mode with an intelligent, image-safe theme engine.",
+  "minimum_chrome_version": "100",
+  "permissions": ["storage", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "storage/settings.js",
+        "content/color-engine.js",
+        "content/site-rules.js",
+        "content/theme-engine.js",
+        "content/mutation-handler.js",
+        "content/inpage-ui.js",
+        "content/boot.js"
+      ],
+      "css": ["styles/preload.css"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": false
+    }
+  ],
+  "action": {
+    "default_title": "Neo Universal Theme",
+    "default_popup": "popup/index.html"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["popup/index.html", "popup/style.css", "popup/popup.js", "icons/icon128.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

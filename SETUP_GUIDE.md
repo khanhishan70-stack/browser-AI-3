@@ -1,130 +1,82 @@
-# Neo Browser - Setup Guide
+# NEXORA Browser - Setup Guide
 
-A Chromium-based AI browser with ESTA AI assistant, YouTube downloader, and more.
-
----
-
-## Prerequisites
-
-Install these first:
-
-1. **Node.js** (v18+) — https://nodejs.org
-2. **Python** (3.9+) — https://python.org
-3. **Git** — https://git-scm.com
-4. **yt-dlp** — https://github.com/yt-dlp/yt-dlp (for YouTube downloads)
-5. **ffmpeg** — https://ffmpeg.org (for merging high-quality video)
+A Chromium-based AI browser with ESTA AI assistant, offline AI (Ollama), YouTube downloader, and more.
 
 ---
 
-## Step 1 — Clone the repository
+## Quick Start (new PC)
 
-```bash
-git clone https://github.com/YOUR_USERNAME/browser-AI.git
-cd browser-AI
-```
+### 1. First run — one time only
 
----
+Double-click **`setup.bat`**. It automatically installs and configures everything:
 
-## Step 2 — Install Node dependencies
+1. **Python 3.13** (if not installed)
+2. **Ollama** (offline AI engine)
+3. **qwen3:1.7b** offline AI model (~1.4 GB download)
+4. Backend environment (`venv` + all Python packages)
 
-```bash
-npm install
-```
+> Requires an internet connection. Takes about 5–10 minutes. Downloads are saved to the `setup_downloads` folder.
 
-This downloads Electron and its dev tools (~180 MB).
+### 2. Every day
 
----
+Double-click **`launch.bat`**. It starts everything for you:
 
-## Step 3 — Set up the Python backend (AI assistant)
+- **[1/4]** Checks/fixes the backend `venv` (auto-rebuilds if copied from another PC)
+- **[2/4]** Starts Ollama (offline AI on port 11434)
+- **[3/4]** Starts the AI backend (writes to `backend.log`)
+- **[4/4]** Opens the NEXORA Browser window
 
-```bash
-cd "ai UI DESIGN/backend"
-
-# Create a virtual environment
-python -m venv venv
-
-# Activate it
-# Windows:
-venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
-# Install Python packages
-pip install -r requirements.txt
-
-# Create your .env file from the example
-copy .env.example .env
-```
+That's it — no Node.js, no Git, no commands needed.
 
 ---
 
-## Step 4 — Get a Groq API Key (free)
+## What you need to hand a new user
 
-The AI assistant uses Groq for fast inference.
+Give them the whole project folder (zipped). Make sure it contains:
 
-1. Go to https://console.groq.com
-2. Sign up / log in
-3. Create an API key
-4. Open `ai UI DESIGN/backend/.env` and replace the `GROQ_API_KEY` line:
+- `setup.bat` and `launch.bat`
+- `ai UI DESIGN/` (backend)
+- `electron/` (browser)
+- `node_modules/` (pre-installed Electron — no Node.js needed)
 
-```
-GROQ_API_KEY=your_key_here
-```
+### Delete before sharing (machine-specific or personal)
 
----
-
-## Step 5 — Launch the browser
-
-Go back to the project root folder:
-
-```bash
-cd ../..
-
-# Windows:
-launch.bat
-
-# Mac/Linux:
-# Start the backend:
-cd "ai UI DESIGN/backend"
-source venv/bin/activate
-python app.py &
-
-# Start the browser:
-npx electron electron/main.js --no-sandbox
-```
-
-The browser opens automatically. The AI assistant connects to the backend.
+- `offline_chat_start.bat` — hardcoded paths to another PC
+- `electron/dist_v2_COPY/NEO.exe` — stale packaged build, not current
+- `backend.log`, `error_log.txt`, `output_log.txt`, `temp_errors.txt`, `NEO_TEST_LOG.txt`
+- `ai UI DESIGN/backend/.env` — delete if it contains your personal API keys (new user makes their own)
+- Any private images/videos in the root folder
 
 ---
 
-## What you get
+## How it works
 
-- **ESTA AI** — Chat with AI, control browser, search the web
-- **Tab system** — Vertical tabs with persistence (tabs survive restart)
-- **YouTube downloader** — Download any quality with yt-dlp
-- **Home shortcuts** — Quick-access website icons, customizable layout
-- **Playlist manager** — Organize downloaded music/videos
-- **NEO Editor** — Built-in code/text editor
-- **Dark cyberpunk UI** — Customizable themes, live wallpaper support
-- **Security assistant** — Browse safely with AI-powered checks
-- **Performance modes** — Save/ultra modes for low-RAM systems
+- **Offline AI** uses Ollama (`http://localhost:11434`, model `qwen3:1.7b`). No Ollama = browser still runs, only offline chat is disabled. The root `start.bat` (llamafile on port 8080) is legacy and unused.
+- **AI backend** runs from `ai UI DESIGN/backend/app.py`, served on `http://127.0.0.1:5000`.
+- **Browser** runs from `electron/main.js` via the local `node_modules/electron` binary.
+- The `venv` inside `ai UI DESIGN/backend` is tied to the PC that created it — `launch.bat` rebuilds it automatically on a new PC.
 
 ---
 
 ## Troubleshooting
 
 **Browser won't start:**
-- Make sure `npm install` completed without errors
-- Try: `npx electron electron/main.js --no-sandbox`
+- Make sure `setup.bat` completed without errors first.
+- From the root, try `node_modules\electron\dist\electron.exe electron\main.js --no-sandbox`.
 
 **AI not responding:**
-- Check that `app.py` is running in the backend folder
-- Verify your Groq API key is valid in `.env`
-- Backend runs on http://localhost:5000
+- Check the `backend.log` file for errors.
+- Make sure Ollama is running: `http://localhost:11434` should answer `/api/show`.
+- Backend health: `curl http://127.0.0.1:5000/api/health` should return `offline_chat.available: true`.
 
 **YouTube downloads failing:**
-- Install yt-dlp: `pip install yt-dlp` or download from GitHub
-- Install ffmpeg and add it to your system PATH
+- `yt-dlp` is installed with the backend. Merging high-quality video needs `ffmpeg` (add it to PATH if missing).
 
 **No sound:**
-- Check system volume and browser audio settings
+- Check system volume and the browser's audio settings.
+
+---
+
+## Important: the backend venv is machine-bound
+
+`ai UI DESIGN/backend/venv/pyvenv.cfg` points to the Python installation that created it. If `launch.bat` can't run it on a new PC it **recreates the venv and reinstalls everything automatically** — this is expected and normal on the first start after copying the folder.

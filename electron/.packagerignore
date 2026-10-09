@@ -1,0 +1,14 @@
+dist
+dist_new
+dist_v2
+dist_v2_COPY
+node_modules/electron
+node_modules/@electron
+node_modules/.cache
+\.git
+vendor
+setup\.bat
+offline_chat_start\.bat
+^start\.bat$
+MAKE RELEASE\.bat
+\.packagerignore

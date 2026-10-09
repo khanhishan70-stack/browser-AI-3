@@ -1,0 +1,15 @@
+FROM ./qwen3-4b-thinking-2507.Q4_K_M.gguf
+
+TEMPLATE """<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+"""
+
+SYSTEM """You are a helpful, friendly offline AI assistant. Answer clearly and concisely."""
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER num_ctx 4096
+PARAMETER temperature 0.7

@@ -1,87 +1,146 @@
+// Chrome Web Store install bridge for the visible browsing surface. The store
+// button is injected into the page's main world, and contextBridge is the only
+// way a main-world script can reach the extension engine in the main process.
+// Namespaced and limited to install actions so a site script cannot do more than
+// the user could from the extension manager.
+try {
+  const { contextBridge, ipcRenderer } = require('electron');
+  contextBridge.exposeInMainWorld('neoStore', {
+    parse: (url) => ipcRenderer.invoke('ext:webstore-parse', url),
+    install: (id, meta) => ipcRenderer.invoke('ext:webstore-install', id, meta || {}),
+    installCatalog: (id, name) => ipcRenderer.invoke('ext:webstore-catalog-lookup', id, name),
+    proxyGet: () => ipcRenderer.invoke('ext:proxy-get'),
+    proxySet: (rule) => ipcRenderer.invoke('ext:proxy-set', rule),
+    pickUnpacked: () => ipcRenderer.invoke('ext:pick-folder'),
+    pickPackage: () => ipcRenderer.invoke('ext:pick-package')
+  });
+} catch (e) { /* no bridge on this surface; the store button simply will not appear */ }
+
 const script = document.createElement('script');
 script.textContent = `
 (function(){
   if (window.__neoBP) return;
   window.__neoBP = true;
-  // ===== ANTI-ELECTRON DETECTION =====
-  // Runs before any page scripts to prevent Electron fingerprinting
+  // ===== BEAT AUDIO-ROUTING GATE + VOLUME BOOST =====
+  // (1) VOLUME BOOST: window.__neoVolumeBoost(level) routes every <audio>/<video>
+  // through a Web-Audio GainNode so the volume can go UP TO 500% instead of the
+  // browser's 100% cap. Default level 1 (100%) routes nothing and leaves the
+  // page's audio path completely alone.
+  // (2) BEAT ANALYSER: on non-streaming sites an injected AnalyserNode powers the
+  // visualizer. On streaming hosts the analyser is OFF (routing Spotify/Netflix
+  // audio through a Web-Audio graph is documented as breaking playback there).
+  // Protected/DRM hosts here are the ones where the gain graph is guaranteed to
+  // fail or break music (Spotify track transitions go silent + error, Netflix
+  // et al throw NotSupportedError). Boost is disabled on these, never silently.
+  var _hn = (function(){ try { return (location.hostname || '').replace(/^www\./, '').toLowerCase(); } catch(e) { return ''; } })();
+  // Live voice/video calls: never reroute or boost. WebRTC call audio must go
+  // straight to the hardware - pushing it through a side AudioContext resamples
+  // it and voices come out high-pitched (chipmunk) on these sites.
+  var _isCallHost = /(^|\.)(whatsapp\.com|meet\.google\.com|hangouts\.google\.com|duo\.google\.com|teams\.microsoft\.com|teams\.live\.com|zoom\.us|discord\.com|telegram\.org|web\.telegram\.org|messenger\.com|skype\.com|web\.skype\.com|slack\.com|whereby\.com|meet\.jit\.si)$/i.test(_hn);
+  var _isStreamingHost = /(^|\.)(spotify\.com|open\.spotify\.com|netflix\.com|hulu\.com|primevideo\.com|disneyplus\.com|hbomax\.com|max\.com|hotstar\.com|peacocktv\.com|paramountplus\.com|crunchyroll\.com|appletv\.apple\.com|tv\.apple\.com|youtube\.com|music\.youtube\.com|vimeo\.com|plex\.tv|soundcloud\.com|bandcamp\.com)$/i.test(_hn);
+  var _noBoost = /(^|\.)(spotify\.com|open\.spotify\.com|netflix\.com|disneyplus\.com|primevideo\.com|hulu\.com|hbomax\.com|max\.com|hotstar\.com|peacocktv\.com|paramountplus\.com|crunchyroll\.com|appletv\.apple\.com|tv\.apple\.com)$/i.test(_hn) || _isCallHost;
+  // ===== CHROME IDENTITY FOR CALLING SITES =====
+  // Discord and WhatsApp wall off camera/screen-sharing when their JS detects
+  // a non-Chrome browser, even when the UA string and client-hint headers are
+  // already pure Chrome (the main process handles those). This aligns the
+  // in-page navigator.userAgentData the same way so their feature checks see
+  // one consistent Chrome identity. Scoped to these hosts only — every other
+  // site keeps the real values.
   try {
-    // Hide webdriver flag
-    Object.defineProperty(navigator, 'webdriver', { get: function() { return undefined; }, configurable: true });
-    // Add fake Chrome plugins
-    var fakePlugins = [
-      { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer', description: 'Portable Document Format' },
-      { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai', description: '' },
-      { name: 'Native Client', filename: 'internal-nacl-plugin', description: '' }
-    ];
-    var pluginsArr = fakePlugins.map(function(p, i) {
-      return { name: p.name, filename: p.filename, description: p.description, length: 0, item: function(){return null;}, namedItem: function(){return null;}, '0': null };
-    });
-    Object.defineProperty(navigator, 'plugins', {
-      get: function() {
-        var arr = pluginsArr.slice();
-        arr.length = pluginsArr.length;
-        arr.item = function(i) { return this[i] || null; };
-        arr.namedItem = function(n) {
-          for (var j = 0; j < this.length; j++) { if (this[j].name === n) return this[j]; }
-          return null;
-        };
-        for (var pi = 0; pi < pluginsArr.length; pi++) {
-          arr[pi] = pluginsArr[pi];
+    if (/(^|\.)(discord\.com|whatsapp\.com)$/i.test(_hn) && window.navigator) {
+      var _chromeBrands = [
+        { brand: 'Chromium', version: '153' },
+        { brand: 'Not/A)Brand', version: '8' },
+        { brand: 'Google Chrome', version: '153' }
+      ];
+      var _chromeUAD = {
+        brands: _chromeBrands,
+        mobile: false,
+        platform: 'Windows',
+        getHighEntropyValues: function(hints) {
+          return Promise.resolve({
+            brands: _chromeBrands,
+            mobile: false,
+            platform: 'Windows',
+            platformVersion: '15.0.0',
+            architecture: 'x86',
+            bitness: '64',
+            model: '',
+            uaFullVersion: '153.0.8010.53'
+          });
         }
-        return arr;
-      },
-      configurable: true
-    });
-    // Mock userAgentData
-    if (navigator.userAgentData) {
-      var origGetHighEntropy = navigator.userAgentData.getHighEntropyValues;
-      navigator.userAgentData.getHighEntropyValues = function(hints) {
-        var result = origGetHighEntropy ? origGetHighEntropy.call(navigator.userAgentData, hints) : Promise.resolve({});
-        return result.then(function(he) {
-          he.platform = 'Windows';
-          he.platformVersion = '15.0.0';
-          he.architecture = 'x86';
-          he.model = '';
-          he.bitness = '64';
-          he.wow64 = false;
-          he.fullVersionList = [
-            { brand: 'Not A(Brand', version: '99.0.0.0' },
-            { brand: 'Google Chrome', version: '142.0.0.0' },
-            { brand: 'Chromium', version: '142.0.0.0' }
-          ];
-          return he;
-        });
       };
+      try {
+        Object.defineProperty(window.navigator, 'userAgentData', { get: function() { return _chromeUAD; }, configurable: true });
+      } catch (e) {
+        try { window.navigator.__defineGetter__('userAgentData', function() { return _chromeUAD; }); } catch (e2) {}
+      }
     }
-    // Hide chrome.runtime (Electron-specific)
-    if (window.chrome && window.chrome.runtime) {
-      ['sendMessage', 'onMessage', 'connect', 'onConnect', 'runtime'].forEach(function(k) {
-        if (window.chrome.runtime[k]) {
-          var orig = window.chrome.runtime[k];
-          // Keep basic stubs, remove Electron internals
-          if (typeof orig === 'object') {
-            Object.keys(orig).forEach(function(p) {
-              if (typeof orig[p] === 'function') {
-                try { orig[p] = function() {}; } catch(e) {}
-              }
-            });
-          }
-        }
-      });
-    }
-    // Mock process.cwd (Electron-specific)
-    if (typeof window.process === 'object' && window.process) {
-      try { Object.defineProperty(window.process, 'type', { get: function() { return undefined; }, configurable: true }); } catch(e) {}
-      try { Object.defineProperty(window.process, 'versions', { get: function() { return undefined; }, configurable: true }); } catch(e) {}
-    }
-  } catch(e) { /* anti-detection errors suppressed */ }
+  } catch (e) {}
   var AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return;
-  var realAC = AC;
+  // Real (unpatched) AudioContext, captured BEFORE any analyser patching below so
+  // the boost gain graph is never rerouted through the analyser node.
+  var _RealAC = AC;
   window.__neoAnalyser = null;
-  var _an = null;
-  var _connected = false;
+  // ---- Boost state ----
+  var _boost = 1;
+  var _boostGain = null;
+  var _boostCtx = null;
+  var _boostEngaged = false;
+  var _boostRouted = window.__neoBoostRouted;
+  if (!_boostRouted) { _boostRouted = new Set(); window.__neoBoostRouted = _boostRouted; }
+  window.__neoVolumeBoostStatus = function() {
+    return { supported: !_noBoost, engaged: _boostEngaged, gain: _boostGain ? _boostGain.gain.value : null, routed: _boostRouted.size };
+  };
+  function _boostEnsureGraph() {
+    if (_boostEngaged) return true;
+    try {
+      var Ctor = _RealAC || window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return false;
+      var ctx = new Ctor();
+      try { if (ctx.state === 'suspended' && ctx.resume) ctx.resume(); } catch(e) {}
+      var g = ctx.createGain();
+      g.gain.value = _boost;
+      g.connect(ctx.destination);
+      _boostCtx = ctx; _boostGain = g; _boostEngaged = true;
+      return true;
+    } catch(e) { return false; }
+  }
+  function _boostRoute(el) {
+    if (!el || !_boostEngaged || _boostRouted.has(el)) return;
+    _boostRouted.add(el);
+    try {
+      var src = _boostCtx.createMediaElementSource(el);
+      src.connect(_boostGain);
+    } catch(e) {
+      try { el.dataset.neoBoostFail = '1'; } catch(e2) {}
+    }
+  }
+  function _boostEngage() {
+    if (_noBoost) return -2; // unsupported on this site (DRM/protected)
+    if (!_boostEnsureGraph()) return -1; // no Web-Audio support
+    var els = document.querySelectorAll('video,audio');
+    for (var i = 0; i < els.length; i++) (function(el) {
+      if (el.readyState > 0 || el.currentTime > 0) _boostRoute(el);
+      else setTimeout(function() { if (el.readyState > 0) _boostRoute(el); }, 300);
+    })(els[i]);
+    return _boost;
+  }
+  window.__neoVolumeBoost = function(level) {
+    level = Number(level) || 0;
+    if (level <= 0) level = 1;
+    level = Math.min(5, Math.max(1, level));
+    _boost = level;
+    if (_boost === 1 && !_boostEngaged) return 1;
+    if (_boostEngaged) {
+      try { _boostGain.gain.setTargetAtTime(_boost, _boostCtx.currentTime, 0.02); }
+      catch(e) { try { _boostGain.gain.value = _boost; } catch(e2) {} }
+      return _boost;
+    }
+    return _boostEngage();
+  };
+  // ---- Analyser (streaming gate) ----
+  var _anConnected = false;
   var _poll = function() {
     var an = window.__neoAnalyser;
     if (!an) return null;
@@ -91,98 +150,127 @@ script.textContent = `
     return Array.from(f);
   };
   window.__neoPollAudio = _poll;
-  // Patch AudioContext constructor to inject analyser
-  var ACtor = function() {
-    var ctx = new realAC();
-    var an = ctx.createAnalyser();
-    an.fftSize = 128;
-    window.__neoAnalyser = an;
-    _an = an;
-    var bs = ctx.createBufferSource.bind(ctx);
-    ctx.createBufferSource = function() {
-      var src = bs();
-      try { src.connect(an); an.connect(ctx.destination); _connected = true; } catch(e) {}
-      return src;
-    };
-    var mes = ctx.createMediaElementSource.bind(ctx);
-    ctx.createMediaElementSource = function(el) {
-      var src = mes(el);
-      try { src.connect(an); an.connect(ctx.destination); _connected = true; } catch(e) {}
-      return src;
-    };
-    // Also catch OscillatorNode and other sources
-    var cos = ctx.createOscillator.bind(ctx);
-    ctx.createOscillator = function() {
-      var src = cos();
-      try { src.connect(an); an.connect(ctx.destination); _connected = true; } catch(e) {}
-      return src;
-    };
-    var cgs = ctx.createGain.bind(ctx);
-    ctx.createGain = function() {
-      var g = cgs();
-      // If something connects to this gain, it will pass through the analyser via destination
-      return g;
-    };
-    return ctx;
-  };
-  ACtor.prototype = realAC.prototype;
-  window.AudioContext = ACtor;
-  if (window.webkitAudioContext) window.webkitAudioContext = ACtor;
-  // Also patch OfflineAudioContext just in case
-  if (window.OfflineAudioContext) {
-    var realOAC = window.OfflineAudioContext;
-    window.OfflineAudioContext = function() {
-      var ctx = new (Function.prototype.bind.apply(realOAC, [null].concat(Array.prototype.slice.call(arguments))))();
-      if (!window.__neoAnalyser) {
-        try { var an2 = ctx.createAnalyser(); an2.fftSize = 128; window.__neoAnalyser = an2; } catch(e) {}
-      }
+  if (!_isStreamingHost && !_isCallHost) {
+    var realAC = _RealAC || AC;
+    var ACtor = function() {
+      var ctx = new realAC();
+      var an = null;
+      try {
+        an = ctx.createAnalyser();
+        an.fftSize = 128;
+        window.__neoAnalyser = an;
+      } catch(e) {}
+      var bs = ctx.createBufferSource.bind(ctx);
+      ctx.createBufferSource = function() {
+        var src = bs();
+        try { if (!_anConnected) { src.connect(an); an.connect(ctx.destination); _anConnected = true; } } catch(e) {}
+        return src;
+      };
+      var mes = ctx.createMediaElementSource.bind(ctx);
+      ctx.createMediaElementSource = function(el) {
+        var src = mes(el);
+        try { if (!_anConnected && !_boostEngaged) { src.connect(an); an.connect(ctx.destination); _anConnected = true; } } catch(e) {}
+        return src;
+      };
+      var cos = ctx.createOscillator.bind(ctx);
+      ctx.createOscillator = function() {
+        var src = cos();
+        try { if (!_anConnected) { src.connect(an); an.connect(ctx.destination); _anConnected = true; } } catch(e) {}
+        return src;
+      };
       return ctx;
     };
-    window.OfflineAudioContext.prototype = realOAC.prototype;
+    ACtor.prototype = realAC.prototype;
+    window.AudioContext = ACtor;
+    if (window.webkitAudioContext) window.webkitAudioContext = ACtor;
   }
-  // Fallback: intercept ANY media element playback and connect it
-  var _tryConnectMedia = function(el) {
-    if (_connected || !el) return;
+  // ---- Media-element tracking (boost + analyser fallback) ----
+  function _tryConnectMedia(el) {
+    if (_boostEngaged) { _boostRoute(el); return; }
+    if (_isCallHost || _isStreamingHost || !window.__neoAnalyser || _anConnected || !el) return;
     try {
-      if (!window.__neoAnalyser) {
-        var ctx2 = new realAC();
-        var an3 = ctx2.createAnalyser();
-        an3.fftSize = 128;
-        window.__neoAnalyser = an3;
-        _an = an3;
-      }
-      var ctx = window.__neoAnalyser ? null : null;
-      var ac = window.__neoAudioCtx;
-      if (!ac) {
-        ac = new realAC();
-        window.__neoAudioCtx = ac;
-      }
+      var ac = window.__neoBeatCtx;
+      if (!ac) { ac = new (_RealAC || AC)(); window.__neoBeatCtx = ac; }
       var src = ac.createMediaElementSource(el);
       src.connect(window.__neoAnalyser);
       window.__neoAnalyser.connect(ac.destination);
-      _connected = true;
+      _anConnected = true;
     } catch(e) {}
-  };
-  // Intercept when any media starts playing
+  }
   var _origPlay = HTMLMediaElement.prototype.play;
   HTMLMediaElement.prototype.play = function() {
     var self = this;
     setTimeout(function() { _tryConnectMedia(self); }, 100);
     return _origPlay.apply(this, arguments);
   };
-  // Also watch for new media elements being added to the page
   var _obs = new MutationObserver(function(muts) {
-    if (_connected) { try { _obs.disconnect(); } catch(e) {} return; }
     for (var i = 0; i < muts.length; i++) {
       var nodes = muts[i].addedNodes;
       for (var j = 0; j < nodes.length; j++) {
-        if (nodes[j].tagName === 'VIDEO' || nodes[j].tagName === 'AUDIO') {
-          setTimeout(function(el) { _tryConnectMedia(el); }, 500, nodes[j]);
+        var n = nodes[j];
+        if (n && (n.tagName === 'VIDEO' || n.tagName === 'AUDIO')) {
+          setTimeout(function(el) { _tryConnectMedia(el); }, 500, n);
+        } else if (n && n.querySelectorAll) {
+          var inn = n.querySelectorAll('video,audio');
+          for (var k = 0; k < inn.length; k++) setTimeout(function(el) { _tryConnectMedia(el); }, 500, inn[k]);
         }
       }
     }
   });
   try { _obs.observe(document.body || document.documentElement, {childList: true, subtree: true}); } catch(e) {}
+  // ===== YOUTUBE AD SKIPPER =====
+  window.__neoAdSkipEnabled = true;
+  window._neoAdSkipActive = false;
+  function _neoAdSkipLoop() {
+    if (window._neoAdSkipActive) return;
+    window._neoAdSkipActive = true;
+    function _loop() {
+      try {
+        if (!window.__neoAdSkipEnabled) { setTimeout(_loop, 2000); return; }
+        var player = document.getElementById('movie_player');
+        if (!player) { setTimeout(_loop, 1000); return; }
+        var adShowing = player.classList.contains('ad-showing');
+        if (adShowing) {
+          var skipBtn = document.querySelector('.ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-skip-ad-button, [class*="skip-ad"], .ytp-ad-skip-button-modern button, .ytp-ad-skip-button button');
+          if (skipBtn) { skipBtn.click(); try { skipBtn.dispatchEvent(new MouseEvent('click', {bubbles:true})); } catch(e2) {} }
+          var video = player.querySelector('video') || document.querySelector('video');
+          if (video) {
+            if (!video.muted) { video.muted = true; video.dataset.neoWasMuted = '1'; }
+            try { video.currentTime = video.duration - 0.5; } catch(e3) {}
+            try { video.playbackRate = 16; } catch(e4) {}
+          }
+          var overlays = document.querySelectorAll('.ytp-ad-overlay-container, .ytp-ad-text-overlay, .ytp-ad-image-overlay');
+          for (var i = 0; i < overlays.length; i++) overlays[i].style.display = 'none';
+        } else {
+          var video2 = player.querySelector('video') || document.querySelector('video');
+          if (video2) {
+            if (video2.dataset && video2.dataset.neoWasMuted === '1') { video2.muted = false; delete video2.dataset.neoWasMuted; }
+            try { video2.playbackRate = 1; } catch(e5) {}
+          }
+        }
+      } catch(e) {}
+      setTimeout(_loop, 300);
+    }
+    _loop();
+  }
+  function _startNeoAdSkip() {
+    if (location.hostname.indexOf('youtube.com') !== -1) _neoAdSkipLoop();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _startNeoAdSkip);
+  } else {
+    _startNeoAdSkip();
+  }
+  var _lastYtPath2 = location.pathname + location.search;
+  setInterval(function() {
+    if (location.pathname + location.search !== _lastYtPath2) {
+      _lastYtPath2 = location.pathname + location.search;
+      if (location.pathname.indexOf('/watch') !== -1) {
+        window._neoAdSkipActive = false;
+        setTimeout(_neoAdSkipLoop, 500);
+      }
+    }
+  }, 1000);
   // ===== YOUTUBE DOWNLOAD BUTTON =====
   function _injectYTDL() {
     if (!location.pathname.startsWith('/watch')) return;

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+<title>ESTA Saved Chats</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    background:#070a17;
+    color:#dfe6ff;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    overflow:hidden;
+    user-select:none;
+  }
+  #titlebar {
+    display:flex;align-items:center;gap:7px;
+    height:34px;padding:0 8px 0 11px;
+    background:linear-gradient(180deg,#141a33,#0c0f21 60%);
+    border-bottom:1px solid rgba(130,160,255,0.18);
+    -webkit-app-region:drag;
+  }
+  #titlebar .logo {
+    width:16px;height:16px;border-radius:5px;flex:0 0 auto;
+    background:linear-gradient(135deg,#00c8ff,#7a67ff 60%,#ff4ecd);
+    display:flex;align-items:center;justify-content:center;
+    font-size:9px;color:#fff;
+  }
+  #titlebar .t { font-size:12px;font-weight:700;letter-spacing:.3px;color:#cfe0ff;white-space:nowrap;flex:1;overflow:hidden;text-overflow:ellipsis; }
+  #titlebar .btn {
+    -webkit-app-region:no-drag;
+    width:20px;height:20px;border-radius:5px;border:none;cursor:pointer;
+    background:transparent;color:#9db2ff;font-size:12px;line-height:20px;text-align:center;
+  }
+  #titlebar .btn:hover { background:rgba(140,170,255,0.14); color:#fff; }
+  #toolbar { display:flex;gap:5px;padding:8px 9px 6px; }
+  #toolbar button {
+    border:none;cursor:pointer;border-radius:8px;
+    background:linear-gradient(135deg,#00c8ff,#4f6bff);
+    color:#fff;padding:5px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;
+  }
+  #toolbar button:hover { filter:brightness(1.12); }
+  #searchWrap { position:relative;flex:1;min-width:0; }
+  #searchWrap input {
+    width:100%;height:27px;border-radius:8px;border:1px solid rgba(130,160,255,0.25);
+    background:#0b0f22;color:#dbe7ff;outline:none;padding:0 8px;font-size:11px;
+  }
+  #searchWrap input::placeholder { color:#5b6b95; }
+  #listContainer { position:absolute;top:69px;left:0;right:0;bottom:30px;overflow-y:auto; }
+  #listContainer::-webkit-scrollbar { width:7px; }
+  #listContainer::-webkit-scrollbar-thumb { background:rgba(110,140,255,0.35); border-radius:4px; }
+  .conv {
+    margin:4px 7px;padding:8px 9px;border-radius:10px;cursor:pointer;
+    background:linear-gradient(180deg,rgba(17,24,51,0.9),rgba(10,14,32,0.9));
+    border:1px solid rgba(120,150,255,0.14);
+  }
+  .conv:hover { background:linear-gradient(180deg,#192147,#101631); border-color:rgba(120,150,255,0.35); }
+  .conv .bt { font-size:12px;font-weight:700;color:#e7eeff;display:flex;justify-content:space-between;align-items:center;gap:6px; }
+  .conv .bt .del {
+    flex:0 0 auto;width:17px;height:17px;border-radius:5px;border:none;cursor:pointer;
+    background:transparent;color:#8b9dc6;font-size:11px;line-height:17px;display:none;
+  }
+  .conv:hover .bt .del { display:block; }
+  .conv .bt .del:hover { background:rgba(255,80,120,0.2); color:#ff8ba3; }
+  .conv .pr { font-size:10.5px;color:#7d8fc4;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .empty {
+    margin:18px 10px;text-align:center;color:#5d6b95;
+    font-size:11.5px;line-height:1.5;background:rgba(20,26,52,0.5);border-radius:10px;padding:16px 8px;
+  }
+  #dockbar {
+    position:absolute;left:0;right:0;bottom:0;height:30px;
+    display:flex;align-items:center;justify-content:space-between;padding:0 9px;
+    background:linear-gradient(180deg,#0e1228,#0a0d1d);
+    border-top:1px solid rgba(130,160,255,0.16);
+  }
+  #dockbar .cnt { font-size:10.5px;color:#7383b8;letter-spacing:.2px; }
+  #dockbar button {
+    border:none;cursor:pointer;border-radius:7px;padding:3px 10px;font-size:10.5px;font-weight:700;
+    background:rgba(140,170,255,0.12);color:#aebfff;
+  }
+  #dockbar button:hover { background:rgba(140,170,255,0.24); color:#fff; }
+</style>
+</head>
+<body>
+  <div id="titlebar">
+    <div class="logo">✦</div>
+    <div class="t">ESTA · Saved Chats</div>
+    <button class="btn" id="minBtn" title="Minimize">—</button>
+    <button class="btn" id="dockBtn" title="Dock back into browser">⤓</button>
+  </div>
+  <div id="toolbar">
+    <button id="newBtn" title="Start a new chat">✦ New chat</button>
+    <div id="searchWrap"><input id="searchInput" placeholder="Search chats…"></div>
+  </div>
+  <div id="listContainer"></div>
+  <div id="dockbar">
+    <span class="cnt" id="convCount">0 chats</span>
+    <button id="closeBtn">✕ Close</button>
+  </div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const listEl = $('listContainer');
+  let cache = [];
+  let q = '';
+
+  function searchTitle(t) {
+    try {
+      const j = JSON.parse(t || '{}');
+      return (j.title || '').trim() || t || 'Untitled chat';
+    } catch (e) { return (t || 'Untitled chat').trim(); }
+  }
+  function renderList() {
+    const term = q.toLowerCase();
+    const shown = cache.filter(function (c) {
+      if (!term) return true;
+      const t = searchTitle(c.title);
+      if (t.toLowerCase().indexOf(term) !== -1) return true;
+      const d = String(c.updatedAt || c.createdAt || '');
+      if (d.toLowerCase().indexOf(term) !== -1) return true;
+      return false;
+    });
+    $('convCount').textContent = shown.length + ' chat' + (shown.length === 1 ? '' : 's');
+    if (!shown.length) {
+      listEl.innerHTML = '<div class="empty">' + (cache.length ? 'No chats match your search' : 'No saved conversations yet.<br>Start a chat in ESTA AI and it will appear here.') + '</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    shown.forEach(function (c) {
+      const el = document.createElement('div');
+      el.className = 'conv';
+      const t = searchTitle(c.title);
+      const when = new Date(c.updatedAt || c.createdAt || Date.now());
+      const dstr = isNaN(when.getTime()) ? '' : when.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      el.innerHTML = '';
+      const b = document.createElement('div'); b.className = 'bt';
+      const sp = document.createElement('span'); sp.textContent = t; sp.title = t;
+      const del = document.createElement('button'); del.className = 'del'; del.textContent = '✕'; del.title = 'Delete conversation';
+      del.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        try { window.electronAPI.chatPanelDeleteConv(c.id); } catch (e) {}
+      });
+      b.appendChild(sp); b.appendChild(del);
+      el.appendChild(b);
+      if (dstr) {
+        const p = document.createElement('div'); p.className = 'pr'; p.textContent = dstr;
+        el.appendChild(p);
+      }
+      el.addEventListener('click', function () {
+        try { window.electronAPI.chatPanelOpenConv(c.id); } catch (e) {}
+      });
+      listEl.appendChild(el);
+    });
+  }
+  function syncData(d) {
+    if (!d) return;
+    cache = Array.isArray(d.list) ? d.list.slice() : [];
+    renderList();
+  }
+  $('newBtn').addEventListener('click', function () { try { window.electronAPI.chatPanelNewChat(); } catch (e) {} });
+  $('searchInput').addEventListener('input', function () { q = $('searchInput').value.trim(); renderList(); });
+  $('dockBtn').addEventListener('click', function () { try { window.electronAPI.chatPanelDock(); } catch (e) {} });
+  $('closeBtn').addEventListener('click', function () {
+    try { window.electronAPI.chatPanelClose ? window.electronAPI.chatPanelClose() : window.close(); } catch (e) { window.close(); }
+  });
+  $('minBtn').addEventListener('click', function () {
+    try {
+      const wm = window.electronAPI.minimizeWindow;
+      if (wm) { wm(); return; }
+    } catch (e) {}
+    try { document.title = ''; window.blur(); } catch (e) {}
+  });
+  try { window.electronAPI.minimizeWindow = window.electronAPI.minimizeWindow; } catch (e) {}
+  if (window.electronAPI && window.electronAPI.onChatPanelSync) {
+    window.electronAPI.onChatPanelSync(syncData);
+  }
+  syncData({ list: [] });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neo Universal Theme</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="head">
+      <div class="logo">🎨</div>
+      <div class="titles">
+        <h1>Neo Universal Theme</h1>
+        <p id="hostLabel">detecting website…</p>
+      </div>
+      <button id="extToggle" class="power" title="Enable / disable extension" aria-pressed="true">⏻</button>
+    </header>
+
+    <section class="block">
+      <div class="label">Theme for this website</div>
+      <div class="modes" id="modes">
+        <button data-mode="auto" class="mode">
+          <span class="ico">⚙️</span><span>Auto</span>
+        </button>
+        <button data-mode="dark" class="mode">
+          <span class="ico">🌙</span><span>Dark</span>
+        </button>
+        <button data-mode="light" class="mode">
+          <span class="ico">☀️</span><span>Light</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="block row-block">
+      <label class="switchrow">
+        <input type="checkbox" id="remember" />
+        <span class="track"><i></i></span>
+        <span class="switchlabel">
+          Remember for this website
+          <em id="rememberHint">stores a per-domain preference</em>
+        </span>
+      </label>
+      <button id="clearSite" class="linkbtn">Reset this site</button>
+    </section>
+
+    <section class="block">
+      <div class="label">Global Theme</div>
+      <select id="globalMode">
+        <option value="auto">⚙️ Auto — follow system</option>
+        <option value="dark">🌙 Dark — all websites</option>
+        <option value="light">☀️ Light — all websites</option>
+      </select>
+      <p class="hint">Per-site choices override the global theme.</p>
+    </section>
+
+    <section class="block">
+      <div class="label">Theme Strength</div>
+      <div class="strength" id="strength">
+        <button data-strength="weak">Weak</button>
+        <button data-strength="medium">Medium</button>
+        <button data-strength="strong">Strong</button>
+      </div>
+      <p class="hint" id="strengthHint"></p>
+    </section>
+
+    <section class="block">
+      <div class="label">Saved sites</div>
+      <div id="siteList" class="sitelist"><span class="empty">No per-site overrides yet.</span></div>
+    </section>
+
+    <footer class="foot">
+      <span id="statusLine">Active</span>
+      <span class="dot" id="statusDot"></span>
+    </footer>
+  </div>
+  <script src="../storage/settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
