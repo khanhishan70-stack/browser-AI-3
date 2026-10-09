@@ -19519,7 +19519,8 @@
       { url: 'https://drive.google.com', name: 'Drive', addedAt: 0 },
       { url: 'https://maps.google.com', name: 'Maps', addedAt: 0 },
       { url: 'https://www.shaalaa.com', name: 'Shaalaa', addedAt: 0 },
-      { url: 'https://gemini.google.com', name: 'Gemini', addedAt: 0 }
+      { url: 'https://gemini.google.com', name: 'Gemini', addedAt: 0 },
+      { url: 'https://web.whatsapp.com', name: 'WhatsApp', addedAt: 0 }
     ];
 
     function loadShortcuts() {
@@ -20182,6 +20183,7 @@
 
   // ===== WALLPAPER SYSTEM =====
   var WALLPAPERS = [
+    "download (8).jpg",
     "Dreamy Galaxy Cherry Blossom Wallpaper for iPad Pro.jpg",
     "Uma Grande Paisagem Japonesa Rosa Para Computadores.jpg",
     "doraemon.jpg",
@@ -22760,7 +22762,12 @@
   }
 
   function isLikelyURL(str) {
-    return /^https?:\/\//i.test(str) || /^[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(\/|$)/.test(str);
+    if (!str || /\s/.test(str)) return false;
+    if (/^https?:\/\//i.test(str)) return true;
+    // localhost / 127.0.0.1 / LAN IPs, optional port (dev servers, routers)
+    if (/^(localhost|\d{1,3}(\.\d{1,3}){3})(:\d+)?(\/|$)/i.test(str)) return true;
+    // Multi-level domains: mail.google.com, web.whatsapp.com, bbc.co.uk ...
+    return /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(:\d+)?(\/|$)/.test(str);
   }
 
   function _extractFirstUrl(str) {

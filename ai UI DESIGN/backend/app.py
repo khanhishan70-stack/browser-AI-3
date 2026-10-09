@@ -954,13 +954,16 @@ WHATSAPP_CALL_OFFSET_X = env_int("WHATSAPP_CALL_OFFSET_X", 132)
 WHATSAPP_CALL_OFFSET_Y = env_int("WHATSAPP_CALL_OFFSET_Y", 56)
 
 # Initialize Groq AI (lazily - importing groq costs ~1.5s and delays boot)
+# The key is OPTIONAL at boot: without it the backend still runs (history,
+# downloads, offline chat and every local feature keep working) and the
+# Groq-powered endpoints simply report that a key is needed. New users arrive
+# with no .env yet - exiting here would leave "AI backend OFF" forever.
 groq_api_key = os.getenv("GROQ_API_KEY")
 if not groq_api_key:
-    print("❌ ERROR: GROQ_API_KEY not found in .env file!")
-    print("Please add your API key to backend/.env")
-    exit(1)
-
-print(f"Groq API key loaded: {groq_api_key[:10]}...")  # Print first 10 chars for verification
+    print("WARNING: GROQ_API_KEY not found in .env - Groq cloud chat disabled.")
+    print("Add your key to ai UI DESIGN/backend/.env to enable ESTA cloud chat.")
+else:
+    print(f"Groq API key loaded: {groq_api_key[:10]}...")  # Print first 10 chars for verification
 
 class _LazyGroqClient:
     """Creates the real Groq client on first use, keeping boot fast."""

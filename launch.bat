@@ -32,6 +32,16 @@ echo    Installing dependencies, one-time only...
 echo    OK.
 :venv_done
 
+REM ---- First-run backend config (never overwrite an existing .env) ----
+if not exist "ai UI DESIGN\backend\.env" (
+  if exist "ai UI DESIGN\backend\.env.example" copy /y "ai UI DESIGN\backend\.env.example" "ai UI DESIGN\backend\.env" >nul
+  echo.
+  echo    First run: created ai UI DESIGN\backend\.env from the template.
+  echo    For AI cloud chat, paste a free Groq key as GROQ_API_KEY=... in it:
+  echo    https://console.groq.com  (then re-run launch.bat)
+  echo    Browser, history, downloads and offline tools work without it.
+)
+
 REM ---- [2/4] Start Offline AI (Ollama on port 11434) ----
 echo [2/4] Starting offline AI, Ollama...
 netstat -an | findstr /c:":11434" | findstr /c:"LISTENING" >nul
