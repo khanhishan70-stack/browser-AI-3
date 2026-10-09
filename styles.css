@@ -130,6 +130,20 @@ body::before {
 .hero-stats strong { display: block; font-size: 26px; color: var(--neon); }
 .hero-stats span { color: var(--mut); font-size: 13.5px; }
 
+/* ---------- real screenshot hero frame ---------- */
+.shot-frame {
+  background: #0b0e13; border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 40px 100px rgba(0,0,0,.6), 0 0 90px rgba(0,255,249,.1);
+  overflow: hidden; animation: floaty 7s ease-in-out infinite;
+}
+.shot-bar { display: flex; align-items: center; gap: 7px; padding: 11px 15px; background: #10141b; border-bottom: 1px solid var(--line-soft); }
+.shot-tag { margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--neon); border: 1px solid var(--line); border-radius: 20px; padding: 3px 12px; background: rgba(0,255,249,.06); }
+.shot-frame img { display: block; width: 100%; height: auto; }
+.hero-badges { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.hero-badges span { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--txt); background: rgba(255,255,255,.05); border: 1px solid var(--line-soft); border-radius: 20px; padding: 6px 14px; }
+.hero-badges span:first-child { color: var(--neon); border-color: var(--line); }
+.shot-img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+
 /* ---------- browser mockup (illustrative) ---------- */
 .mock-window {
   background: #0b0e13; border: 1px solid var(--line); border-radius: 18px;
