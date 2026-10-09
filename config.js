@@ -6,19 +6,14 @@
  * of linking anywhere. Never invent or hard-code release URLs.
  * ============================================================ */
 window.NEXORA_SITE = {
-  // Example: "https://github.com/your-org/nexora-browser"
-  githubRepoUrl: "",
+  githubRepoUrl: "https://github.com/khanhishan70-stack/browser-AI-3",
 
-  // Example: "https://github.com/your-org/nexora-browser/releases/latest"
-  releasesUrl: "",
+  releasesUrl: "https://github.com/khanhishan70-stack/browser-AI-3/releases/latest",
 
-  // Direct installer asset (.exe), when published. Leave "" to disable.
-  // Example: "https://github.com/your-org/nexora-browser/releases/download/v1.0.0/NEXORA-Setup.exe"
-  windowsInstallerUrl: "",
+  // Portable ZIP: extract, open "NEXORA Browser", run launch.bat (or NEXORA.exe).
+  windowsInstallerUrl: "https://github.com/khanhishan70-stack/browser-AI-3/releases/download/v1.0.0/NEXORA_Browser_20261010_0330.zip",
 
-  // Shown only when a real release is configured. Keep null until then.
-  // Example: { version: "1.0.0", date: "2026-11-01", size: "96 MB", arch: "Windows 10/11 64-bit" }
-  releaseInfo: null,
+  releaseInfo: { version: "1.0.0", date: "2026-10-10", size: "338 MB", arch: "Windows x64" },
 
   // Contact for security reports, when available.
   securityContact: ""
