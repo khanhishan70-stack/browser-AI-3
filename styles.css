@@ -226,7 +226,7 @@ body::before {
 .typing span:nth-child(2) { animation-delay: .2s; } .typing span:nth-child(3) { animation-delay: .4s; }
 
 /* ---------- screenshots ---------- */
-.shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 38px; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 38px; }
 .shot { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); overflow: hidden; cursor: zoom-in; transition: transform .2s, border-color .2s; margin: 0; }
 .shot:hover { transform: translateY(-4px); border-color: var(--line); }
 .shot-mini { height: 170px; background: #0b0e13; border-bottom: 1px solid var(--line-soft); position: relative; overflow: hidden; padding: 16px; }
