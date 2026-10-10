@@ -817,10 +817,6 @@
     }
     .shortcut-btn:hover { background: rgba(0,0,0,0.7); color: #00fff9; }
     .shortcut-btn.active { background: rgba(0,255,249,0.08); color: #00fff9; border-color: rgba(0,255,249,0.15); }
-    #vAdSkipBtn { transition: all 0.3s; }
-    #vAdSkipBtn.active { background: rgba(0,230,118,0.12); color: #00e676 !important; border-color: rgba(0,230,118,0.25); box-shadow: 0 0 8px rgba(0,230,118,0.15); }
-    #vAdSkipBtn.active .sb-label { color: #00e676 !important; }
-    #vAdSkipBtn:not(.active) { opacity: 0.5; }
     .ab-indicator {
       position: absolute;
       top: 3px; right: 3px;
@@ -14154,7 +14150,6 @@
       <button class="shortcut-btn" id="vAiBtn" title="AI Tools" style="position:relative;color:#8fd3ff;">&#x2728;<span class="sb-label" style="color:#8fd3ff;">AI</span></button>
       <button class="shortcut-btn" id="vOfflineBtn" title="Offline AI Chat (local qwen3 1.7b)" style="position:relative;color:#c792ea;">&#x1f5b1;<span class="sb-label" style="color:#c792ea;">Offline</span></button>
       <div class="sr-divider"></div>
-      <button class="shortcut-btn" id="vAdSkipBtn" title="YouTube Ad Skipper" style="color:#00e676;position:relative;" onclick="toggleAdSkipper()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/><line x1="19" y1="3" x2="19" y2="21"/></svg><span class="sb-label" style="color:#00e676;">Ads</span></button>
       <button class="shortcut-btn" id="hfSideBtn" title="Hands-Free: OFF - click to listen, right-click to change mode" style="color:#00e5ff;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span class="sb-label" id="hfSideLabel" style="color:#00e5ff;">HF</span></button>
     </div>
   </div>
@@ -15520,13 +15515,6 @@
         // Prevention: re-assert the element size on every completed load so the
         // host compositor re-negotiates the guest surface before it can go black.
         setTimeout(reassertWebviewSize, 250);
-        // Inject ad skipper on YouTube pages
-        try {
-          var curUrl = wv.getURL ? wv.getURL() : (wv.src || '');
-          if (curUrl.indexOf('youtube.com/watch') !== -1) {
-            setTimeout(function() { injectAdSkipToWv(wv); }, 1000);
-          }
-        } catch(e) {}
       });
       // Suppress ERR_ABORTED noise (normal when navigation is cancelled/redirected)
       wv.addEventListener('did-fail-load', (e) => {
@@ -15568,12 +15556,6 @@
           console.log('[AUTH] Navigated to:', e.url.split('?')[0]);
           try { window.electronAPI?.send('auth-debug', 'navigate: ' + e.url.split('?')[0]); } catch(ex) {}
         }
-        // Fallback: inject ad-skip code directly on YouTube watch pages
-        if (e.url.indexOf('youtube.com/watch') !== -1) {
-          console.log('[AdSkip] YouTube watch detected, scheduling injection');
-          setTimeout(function() { injectAdSkipToWv(wv); }, 2000);
-          setTimeout(function() { injectAdSkipToWv(wv); }, 5000);
-        }
       });
       wv.addEventListener('did-navigate-in-page', (e) => {
         if (e.isMainFrame) {
@@ -15598,7 +15580,6 @@
           if (e.url.indexOf('youtube.com/watch') !== -1 || e.url.indexOf('youtube.com/playlist') !== -1) {
             clearTimeout(_ytInjectTimer);
             _ytInjectTimer = setTimeout(function() { injectYTDownloadBtn(wv); }, 2000);
-            setTimeout(function() { injectAdSkipToWv(wv); }, 1500);
           }
         }
       });
@@ -15664,54 +15645,6 @@
           } catch(ex) {}
         }
       });
-    }
-
-    // YouTube Ad Skipper — fallback injection from renderer
-    var _adSkipInjectTimer = null;
-    function injectAdSkipToWv(wv) {
-      wv = wv || siteWebview;
-      if (!wv) return;
-      var adSkipOn = true;
-      try { adSkipOn = localStorage.getItem('neoAdSkipper') !== 'false'; } catch(e) {}
-      console.log('[AdSkip] Injecting into webview, enabled=' + adSkipOn);
-      var js = [
-        '(function(){',
-        'try{',
-        'window.__neoAdSkipEnabled=' + (adSkipOn ? 'true' : 'false') + ';',
-        'if(window._neoAdSkipActive){return;}',
-        'window._neoAdSkipActive=true;',
-        'function _loop(){',
-        '  try{',
-        '    if(!window.__neoAdSkipEnabled){setTimeout(_loop,2000);return;}',
-        '    var player=document.getElementById("movie_player");',
-        '    if(!player){setTimeout(_loop,1000);return;}',
-        '    var adShowing=player.classList.contains("ad-showing");',
-        '    if(adShowing){',
-        '      var skip=document.querySelector(".ytp-ad-skip-button-modern,.ytp-ad-skip-button,.ytp-skip-ad-button,[class*=\\"skip-ad\\"],.ytp-ad-skip-button-modern button,.ytp-ad-skip-button button");',
-        '      if(skip){skip.click();try{skip.dispatchEvent(new MouseEvent("click",{bubbles:true}));}catch(e){}}',
-        '      var vid=player.querySelector("video")||document.querySelector("video");',
-        '      if(vid){',
-        '        if(!vid.muted){vid.muted=true;vid.dataset.neoWasMuted="1";}',
-        '        try{vid.currentTime=vid.duration-0.5;}catch(e){}',
-        '        try{vid.playbackRate=16;}catch(e){}',
-        '      }',
-        '      var overlays=document.querySelectorAll(".ytp-ad-overlay-container,.ytp-ad-text-overlay,.ytp-ad-image-overlay");',
-        '      for(var i=0;i<overlays.length;i++)overlays[i].style.display="none";',
-        '    }else{',
-        '      var vid2=player.querySelector("video")||document.querySelector("video");',
-        '      if(vid2){',
-        '        if(vid2.dataset&&vid2.dataset.neoWasMuted==="1"){vid2.muted=false;delete vid2.dataset.neoWasMuted;}',
-        '        try{vid2.playbackRate=1;}catch(e){}',
-        '      }',
-        '    }',
-        '  }catch(e){}',
-        '  setTimeout(_loop,300);',
-        '}',
-        '_loop();',
-        '}catch(e){}',
-        '})();'
-      ].join('\n');
-      wv.executeJavaScript(js).catch(function(err) { console.log('[AdSkip] Execute error:', err.message); });
     }
 
     // YouTube Download Button Injection (floating over video)
@@ -24303,7 +24236,6 @@
     vVideoEditorBtn: 'Edit videos right in the browser.',
     vAiBtn: 'Quick AI tools for the current page.',
     vOfflineBtn: 'Chat with the on-device AI, no internet needed.',
-    vAdSkipBtn: 'Skips YouTube ads automatically.',
     hfSideBtn: 'Voice assistant - click to listen.'
   };
   function _toolPrevName(btn) {
@@ -24391,10 +24323,47 @@
         var dl = document.createElement('button');
         dl.textContent = 'Download update';
         dl.style.cssText = 'flex:1;background:rgba(0,255,249,0.14);border:1px solid rgba(0,255,249,0.3);color:#00fff9;border-radius:9px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
+        var dlState = 'idle';
+        var readyInfo = null;
+        function setDlText(t, disabled) { dl.textContent = t; dl.disabled = !!disabled; dl.style.opacity = disabled ? '0.6' : ''; }
+        if (window.electronAPI && window.electronAPI.onUpdateProgress) {
+          window.electronAPI.onUpdateProgress(function(p) {
+            try {
+              if (dlState !== 'busy' || !document.getElementById('nxUpdateBanner')) return;
+              if (p && p.total > 0) setDlText('Downloading ' + Math.min(99, Math.floor((p.received / p.total) * 100)) + '%', true);
+              else setDlText('Downloading...', true);
+            } catch(e) {}
+          });
+        }
         dl.addEventListener('click', function() {
-          try { if (window.electronAPI.launchInChrome) window.electronAPI.launchInChrome(info.url); } catch(e) {}
-          try { if (window.electronAPI.updateDismiss) window.electronAPI.updateDismiss(info.version); } catch(e) {}
-          b.remove();
+          if (dlState === 'ready' && readyInfo) {
+            setDlText('Restarting...', true);
+            try { if (window.electronAPI.updateRestartApply) window.electronAPI.updateRestartApply(readyInfo); } catch(e) {}
+            return;
+          }
+          if (dlState !== 'idle') return;
+          dlState = 'busy';
+          setDlText('Preparing...', true);
+          var done = function(res) {
+            if (res && res.ok) {
+              dlState = 'ready';
+              readyInfo = { bat: res.bat };
+              setDlText('Restart to update', false);
+              d.textContent = 'NEXORA v' + info.version + ' downloaded. Restart to finish installing \u2014 your tabs and data stay safe.';
+            } else if (res && res.error === 'dev-mode') {
+              try { if (window.electronAPI.launchInChrome) window.electronAPI.launchInChrome(info.url); } catch(e) {}
+              try { if (window.electronAPI.updateDismiss) window.electronAPI.updateDismiss(info.version); } catch(e) {}
+              b.remove();
+            } else {
+              dlState = 'idle';
+              setDlText('Download update', false);
+              d.textContent = 'Download failed (' + ((res && res.error) || 'network') + '). Check internet and try again.';
+            }
+          };
+          try {
+            if (window.electronAPI.updateDownloadInstall) window.electronAPI.updateDownloadInstall().then(done).catch(function() { done(null); });
+            else done(null);
+          } catch(e) { done(null); }
         });
         var later = document.createElement('button');
         later.textContent = 'Later';
@@ -41717,7 +41686,6 @@ function _edStabilize() { _edSafe(function() {
         items:[
           { id:'downloads', label:'Download Manager', icon:'?', desc:'Manage file downloads', sidebarBtn:'vDownloadsBtn' },
           { id:'ytdl', label:'YouTube Downloader', icon:'?', color:'#ff4444', desc:'Download videos', sidebarBtn:'vYtDlBtn' },
-          { id:'adskip', label:'YouTube Ad Skipper', icon:'\u23e9', color:'#00e676', desc:'Auto-skip YouTube ads', action:'toggleAdSkip' },
         ]
       },
       {
@@ -41825,27 +41793,23 @@ function _edStabilize() { _edSafe(function() {
         for (var i = 0; i < sec.items.length; i++) {
           var it = sec.items[i];
           var hasToggle = !!it.sidebarBtn;
-          var isSpecialToggle = it.action === 'toggleAdSkip';
           var on = hasToggle && enabled.indexOf(it.id) >= 0;
-          if (isSpecialToggle) {
-            try { on = localStorage.getItem('neoAdSkipper') !== 'false'; } catch(e) { on = true; }
-          }
           var colorStyle = it.color ? 'color:' + it.color + ';border-color:' + it.color + '22;' : '';
           var delay = i * 30;
 
           html += '<div class="ws-item" data-ws-id="' + it.id + '"'
-            + (hasToggle || isSpecialToggle ? ' data-has-toggle="1"' : '')
+            + (hasToggle ? ' data-has-toggle="1"' : '')
             + (it.catAction ? ' data-cat-action="' + it.catAction + '"' : '')
             + ' style="transition-delay:' + delay + 'ms"'
-            + ' tabindex="0" role="' + (hasToggle || isSpecialToggle ? 'menuitemcheckbox' : 'menuitem') + '"'
-            + (hasToggle || isSpecialToggle ? ' aria-checked="' + on + '"' : '')
+            + ' tabindex="0" role="' + (hasToggle ? 'menuitemcheckbox' : 'menuitem') + '"'
+            + (hasToggle ? ' aria-checked="' + on + '"' : '')
             + '>'
             + '<div class="ws-item-icon" style="' + colorStyle + '">' + it.icon + '</div>'
             + '<div class="ws-item-info">'
             + '<div class="ws-item-label">' + it.label + '</div>'
             + '<div class="ws-item-desc">' + (it.desc || '') + '</div>'
             + '</div>'
-            + (hasToggle || isSpecialToggle ? '<span class="ws-toggle' + (on ? ' on' : '') + '" tabindex="-1"></span>' : '')
+            + (hasToggle ? '<span class="ws-toggle' + (on ? ' on' : '') + '" tabindex="-1"></span>' : '')
             + '</div>';
         }
 
@@ -41873,15 +41837,6 @@ function _edStabilize() { _edSafe(function() {
           var hasToggle = item.getAttribute('data-has-toggle') === '1';
           if (hasToggle) {
             var id = item.getAttribute('data-ws-id');
-            // Special toggle for adskip — toggle the feature directly
-            if (id === 'adskip') {
-              if (typeof window.toggleAdSkipper === 'function') window.toggleAdSkipper();
-              var toggle = item.querySelector('.ws-toggle');
-              var isOn = localStorage.getItem('neoAdSkipper') !== 'false';
-              if (toggle) toggle.classList.toggle('on', isOn);
-              item.setAttribute('aria-checked', isOn);
-              return;
-            }
             var enabled = getEnabledTools();
             var idx = enabled.indexOf(id);
             if (idx >= 0) enabled.splice(idx, 1);
@@ -43429,39 +43384,6 @@ function _edStabilize() { _edSafe(function() {
     addVAMsg(response, 'ai');
     speakVA(response);
   }
-
-  // ===== YOUTUBE AD SKIPPER TOGGLE =====
-  var _adSkipBtn = document.getElementById('vAdSkipBtn');
-  var _adSkipEnabled = true;
-  try { _adSkipEnabled = localStorage.getItem('neoAdSkipper') !== 'false'; } catch(e) {}
-  function toggleAdSkipper() {
-    _adSkipEnabled = !_adSkipEnabled;
-    try { localStorage.setItem('neoAdSkipper', String(_adSkipEnabled)); } catch(e) {}
-    updateAdSkipBtnUI();
-    // Notify all YouTube webviews via executeJavaScript
-    var js = 'window.__neoAdSkipEnabled=' + _adSkipEnabled + ';';
-    for (var idx in _tabWvs) {
-      var wv = _tabWvs[idx];
-      if (wv && wv.isConnected) {
-        try { wv.executeJavaScript(js); } catch(e) {}
-      }
-    }
-    if (siteWebview && siteWebview.isConnected) {
-      try { siteWebview.executeJavaScript(js); } catch(e) {}
-    }
-  }
-  window.toggleAdSkipper = toggleAdSkipper;
-  function updateAdSkipBtnUI() {
-    if (_adSkipBtn) {
-      _adSkipBtn.classList.toggle('active', _adSkipEnabled);
-      _adSkipBtn.title = _adSkipEnabled ? 'YouTube Ad Skipper: ON' : 'YouTube Ad Skipper: OFF';
-    }
-  }
-  updateAdSkipBtnUI();
-  // Sync on startup
-  try {
-    _adSkipEnabled = localStorage.getItem('neoAdSkipper') !== 'false';
-  } catch(e) {}
 
   // Toggle panel
   var vVoiceBtnEl = document.getElementById('vVoiceBtn');

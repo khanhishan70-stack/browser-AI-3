@@ -2586,6 +2586,113 @@ app.whenReady().then(async () => {
   try { setTimeout(function() { _updateCheck(false); }, 10000); } catch(e) {}
   try { setInterval(function() { _updateCheck(false); }, 6 * 3600 * 1000); } catch(e) {}
 
+  // ===== ONE-CLICK UPDATE INSTALL (portable builds) =====
+  // Downloads the release ZIP with live progress, then a tiny helper .bat
+  // waits for this process to exit, overlays ONLY the app folder (user data,
+  // venv, backend .env and accounts live OUTSIDE it and are never touched),
+  // and relaunches. Dev (unpacked) runs always fall back to the release page.
+  function _updateSendProgress(received, total) {
+    try {
+      var wins = BrowserWindow.getAllWindows() || [];
+      for (var i = 0; i < wins.length; i++) {
+        try { if (wins[i] && !wins[i].isDestroyed()) wins[i].webContents.send('update-progress', { received: received, total: total }); } catch(e) {}
+      }
+    } catch(e) {}
+  }
+  function _updateDownloadFile(url, dest, total) {
+    return new Promise(function(resolve, reject) {
+      var got = 0, lastSent = 0;
+      function prog() { _updateSendProgress(got, total); }
+      function get(u, redirs) {
+        if (redirs > 6) return reject(new Error('Too many redirects'));
+        var req = https.get(u, { headers: { 'User-Agent': 'NEXORA-Browser-Updater', 'Accept': 'application/octet-stream' } }, function(res) {
+          var code = res.statusCode || 0;
+          if (code >= 300 && code < 400 && res.headers.location) {
+            res.resume();
+            var next = new URL(res.headers.location, u).toString();
+            return get(next, (redirs || 0) + 1);
+          }
+          if (code !== 200) { res.resume(); return reject(new Error('HTTP ' + code)); }
+          var tmp = dest + '.part';
+          var out = fs.createWriteStream(tmp);
+          res.on('data', function(c) {
+            got += c.length;
+            var now = Date.now();
+            if (now - lastSent > 750) { lastSent = now; prog(); }
+          });
+          res.pipe(out);
+          out.on('finish', function() {
+            out.close(function() {
+              prog();
+              if (!got) { try { fs.unlinkSync(tmp); } catch(e) {} return reject(new Error('Empty response')); }
+              try { fs.renameSync(tmp, dest); } catch(e) { return reject(e); }
+              resolve(dest);
+            });
+          });
+          res.on('error', reject);
+          out.on('error', reject);
+        });
+        req.on('error', reject);
+      }
+      get(url, 0);
+    });
+  }
+  ipcMain.handle('update-download-install', async function() {
+    try {
+      if (!app.isPackaged) return { ok: false, error: 'dev-mode' };
+      var installDir = '';
+      try { installDir = path.dirname(app.getPath('exe') || ''); } catch(e) {}
+      if (!installDir) return { ok: false, error: 'no-dir' };
+      var rel = await _fetchReleaseJson();
+      var assets = (rel && rel.assets) || [];
+      var zip = null;
+      for (var i = 0; i < assets.length; i++) {
+        var nm = String(assets[i].name || '');
+        if (/\.zip$/i.test(nm) && assets[i].browser_download_url) { zip = assets[i]; break; }
+      }
+      if (!zip) return { ok: false, error: 'no-asset' };
+      var total = Number(zip.size || 0);
+      var tmpDir = path.join(os.tmpdir(), 'nexora-update');
+      try { fs.mkdirSync(tmpDir, { recursive: true }); } catch(e) {}
+      var zipPath = path.join(tmpDir, String(zip.name));
+      await _updateDownloadFile(String(zip.browser_download_url), zipPath, total);
+      // Helper .bat (paths baked in): expand, wait for our exit, overlay, relaunch.
+      var batPath = path.join(tmpDir, 'apply-update.bat');
+      var uzDir = path.join(tmpDir, 'uz');
+      var bat =
+        '@echo off\r\n' +
+        'set "ZIP=' + zipPath.split("'").join('') + '"\r\n' +
+        'set "UZ=' + uzDir.split("'").join('') + '"\r\n' +
+        'set "DEST=' + installDir.split("'").join('') + '"\r\n' +
+        'set "PID=' + process.pid + '"\r\n' +
+        'echo NEXORA update: extracting...\r\n' +
+        'powershell -NoProfile -Command "Expand-Archive -LiteralPath \'"%ZIP%"\' -DestinationPath \'"%UZ%"\' -Force"\r\n' +
+        'if exist "%UZ%\\NEXORA Browser\\NEXORA-win32-x64\\NEXORA.exe" ( set "SRC=%UZ%\\NEXORA Browser\\NEXORA-win32-x64" ) else ( set "SRC=%UZ%\\NEXORA-win32-x64" )\r\n' +
+        'if not exist "%SRC%\\NEXORA.exe" ( echo Update layout unexpected - aborting, your browser is untouched. & timeout /t 8 >nul & exit /b 1 )\r\n' +
+        'echo Waiting for NEXORA to close...\r\n' +
+        ':waitloop\r\n' +
+        'tasklist /FI "PID eq %PID%" 2>nul | find "%PID%" >nul\r\n' +
+        'if %ERRORLEVEL% EQU 0 ( timeout /t 1 /nobreak >nul & goto waitloop )\r\n' +
+        'echo Installing update...\r\n' +
+        'robocopy "%SRC%" "%DEST%" /E /R:4 /W:2 /NFL /NDL /NJH /NJS\r\n' +
+        'echo Starting NEXORA...\r\n' +
+        'start "" "%DEST%\\NEXORA.exe" --no-sandbox\r\n' +
+        'rmdir /s /q "%UZ%" >nul 2>&1\r\n';
+      fs.writeFileSync(batPath, bat);
+      return { ok: true, bat: batPath, version: String((rel && rel.tag_name) || '').replace(/^v/i, '') };
+    } catch(e) { return { ok: false, error: String((e && e.message) || e) }; }
+  });
+  ipcMain.handle('update-restart-apply', async function(event, payload) {
+    try {
+      var bat = payload && payload.bat;
+      if (!bat || !fs.existsSync(bat)) return { ok: false };
+      var child = spawn('cmd.exe', ['/c', 'start', 'NEXORA Update', bat], { detached: true, stdio: 'ignore' });
+      try { child.unref(); } catch(e) {}
+      setTimeout(function() { try { app.quit(); } catch(e) {} }, 800);
+      return { ok: true };
+    } catch(e) { return { ok: false }; }
+  });
+
   // Renderer answers the prompt bubble / picker, or manages site settings.
   ipcMain.on('permission-response', function(event, payload) {
     try {
