@@ -2656,37 +2656,88 @@ app.whenReady().then(async () => {
       try { fs.mkdirSync(tmpDir, { recursive: true }); } catch(e) {}
       var zipPath = path.join(tmpDir, String(zip.name));
       await _updateDownloadFile(String(zip.browser_download_url), zipPath, total);
-      // Helper .bat (paths baked in): expand, wait for our exit, overlay, relaunch.
-      var batPath = path.join(tmpDir, 'apply-update.bat');
+      // Hidden applier script (paths baked in): NO console window ever. Shows
+      // a small progress pill, extracts long-path-safe, waits for our exit,
+      // overlays ONLY the app folder, and relaunches.
+      function psQ(s) { return String(s).split("'").join("''"); }
+      var psPath = path.join(tmpDir, 'apply-update.ps1');
       var uzDir = path.join(tmpDir, 'uz');
-      var bat =
-        '@echo off\r\n' +
-        'set "ZIP=' + zipPath.split("'").join('') + '"\r\n' +
-        'set "UZ=' + uzDir.split("'").join('') + '"\r\n' +
-        'set "DEST=' + installDir.split("'").join('') + '"\r\n' +
-        'set "PID=' + process.pid + '"\r\n' +
-        'echo NEXORA update: extracting...\r\n' +
-        'powershell -NoProfile -Command "Expand-Archive -LiteralPath \'"%ZIP%"\' -DestinationPath \'"%UZ%"\' -Force"\r\n' +
-        'if exist "%UZ%\\NEXORA Browser\\NEXORA-win32-x64\\NEXORA.exe" ( set "SRC=%UZ%\\NEXORA Browser\\NEXORA-win32-x64" ) else ( set "SRC=%UZ%\\NEXORA-win32-x64" )\r\n' +
-        'if not exist "%SRC%\\NEXORA.exe" ( echo Update layout unexpected - aborting, your browser is untouched. & timeout /t 8 >nul & exit /b 1 )\r\n' +
-        'echo Waiting for NEXORA to close...\r\n' +
-        ':waitloop\r\n' +
-        'tasklist /FI "PID eq %PID%" 2>nul | find "%PID%" >nul\r\n' +
-        'if %ERRORLEVEL% EQU 0 ( timeout /t 1 /nobreak >nul & goto waitloop )\r\n' +
-        'echo Installing update...\r\n' +
-        'robocopy "%SRC%" "%DEST%" /E /R:4 /W:2 /NFL /NDL /NJH /NJS\r\n' +
-        'echo Starting NEXORA...\r\n' +
-        'start "" "%DEST%\\NEXORA.exe" --no-sandbox\r\n' +
-        'rmdir /s /q "%UZ%" >nul 2>&1\r\n';
-      fs.writeFileSync(batPath, bat);
-      return { ok: true, bat: batPath, version: String((rel && rel.tag_name) || '').replace(/^v/i, '') };
+      var L = [];
+      L.push("Add-Type -AssemblyName System.Windows.Forms");
+      L.push("Add-Type -AssemblyName System.IO.Compression.FileSystem");
+      L.push("Add-Type -AssemblyName System.IO.Compression");
+      L.push("$ErrorActionPreference = 'Stop'");
+      L.push("$zip = '" + psQ(zipPath) + "'");
+      L.push("$stage = Join-Path $env:TEMP 'nxu'");
+      L.push("$dest = '" + psQ(installDir) + "'");
+      L.push("$wantPid = " + process.pid);
+      L.push("function Pump { [Windows.Forms.Application]::DoEvents() }");
+      L.push("$form = New-Object Windows.Forms.Form");
+      L.push("$form.Text = 'NEXORA Update'");
+      L.push("$form.Size = New-Object Drawing.Size(380, 120)");
+      L.push("$form.StartPosition = 'CenterScreen'");
+      L.push("$form.TopMost = $true");
+      L.push("$form.FormBorderStyle = 'FixedDialog'");
+      L.push("$form.MaximizeBox = $false");
+      L.push("$form.MinimizeBox = $false");
+      L.push("$form.ControlBox = $false");
+      L.push("$lbl = New-Object Windows.Forms.Label");
+      L.push("$lbl.Text = 'Updating NEXORA, please wait...'");
+      L.push("$lbl.Dock = 'Fill'");
+      L.push("$lbl.TextAlign = 'MiddleCenter'");
+      L.push("$bar = New-Object Windows.Forms.ProgressBar");
+      L.push("$bar.Style = 'Marquee'");
+      L.push("$bar.Dock = 'Bottom'");
+      L.push("$bar.Height = 18");
+      L.push("$form.Controls.Add($lbl)");
+      L.push("$form.Controls.Add($bar)");
+      L.push("$form.Show() | Out-Null; Pump");
+      L.push("function Fail($m) { $lbl.Text = $m; Pump; Start-Sleep -Seconds 8; $form.Close() }");
+      L.push("try {");
+      L.push("  if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }");
+      L.push("  New-Item -ItemType Directory -Path $stage -Force | Out-Null");
+      L.push("  $fs = [System.IO.File]::OpenRead($zip)");
+      L.push("  try {");
+      L.push("    $za = New-Object System.IO.Compression.ZipArchive($fs)");
+      L.push("    $n = 0");
+      L.push("    foreach ($e in $za.Entries) {");
+      L.push("      $rel = ($e.FullName -replace '/', '\\')");
+      L.push("      if (-not $rel) { continue }");
+      L.push("      $target = '\\\\?\\' + (Join-Path $stage $rel)");
+      L.push("      if ($e.Name -eq '') { [System.IO.Directory]::CreateDirectory($target) | Out-Null; continue }");
+      L.push("      [System.IO.Directory]::CreateDirectory((Split-Path $target)) | Out-Null");
+      L.push("      [System.IO.Compression.ZipFileExtensions]::ExtractToFile($e, $target, $true)");
+      L.push("      $n++; if (($n % 400) -eq 0) { Pump }");
+      L.push("    }");
+      L.push("    $za.Dispose()");
+      L.push("  } finally { $fs.Dispose() }");
+      L.push("  $c1 = Join-Path $stage 'NEXORA Browser\\NEXORA-win32-x64\\NEXORA.exe'");
+      L.push("  $c2 = Join-Path $stage 'NEXORA-win32-x64\\NEXORA.exe'");
+      L.push("  if (Test-Path $c1) { $src = Split-Path $c1 } elseif (Test-Path $c2) { $src = Split-Path $c2 } else { $src = $null }");
+      L.push("  if (-not $src -or -not (Test-Path (Join-Path $dest 'NEXORA.exe'))) { Fail('Update files look wrong - browser untouched.'); return }");
+      L.push("  $lbl.Text = 'Waiting for NEXORA to close...'; Pump");
+      L.push("  $tries = 0");
+      L.push("  while ((Get-Process -Id $wantPid -ErrorAction SilentlyContinue) -and ($tries -lt 120)) { Start-Sleep -Milliseconds 500; $tries++; Pump }");
+      L.push("  Get-Process NEXORA -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue");
+      L.push("  Start-Sleep -Seconds 2");
+      L.push("  $lbl.Text = 'Installing files...'; Pump");
+      L.push("  robocopy \"$src\" \"$dest\" /E /R:5 /W:2 /NFL /NDL /NJH /NJS");
+      L.push("  if ($LASTEXITCODE -ge 8) { Fail('Files are locked - browser untouched. Close NEXORA fully and retry.'); return }");
+      L.push("  $lbl.Text = 'Starting NEXORA...'; Pump");
+      L.push("  Start-Process (Join-Path $dest 'NEXORA.exe') '--no-sandbox'");
+      L.push("  Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue");
+      L.push("  Remove-Item -Force $zip -ErrorAction SilentlyContinue");
+      L.push("  $form.Close()");
+      L.push("} catch { Fail('Update failed - your browser is untouched.') }");
+      fs.writeFileSync(psPath, L.join('\n'));
+      return { ok: true, ps: psPath, version: String((rel && rel.tag_name) || '').replace(/^v/i, '') };
     } catch(e) { return { ok: false, error: String((e && e.message) || e) }; }
   });
   ipcMain.handle('update-restart-apply', async function(event, payload) {
     try {
-      var bat = payload && payload.bat;
-      if (!bat || !fs.existsSync(bat)) return { ok: false };
-      var child = spawn('cmd.exe', ['/c', 'start', 'NEXORA Update', bat], { detached: true, stdio: 'ignore' });
+      var ps = payload && payload.ps;
+      if (!ps || !fs.existsSync(ps)) return { ok: false };
+      var child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass', '-File', ps], { detached: true, stdio: 'ignore', windowsHide: true });
       try { child.unref(); } catch(e) {}
       setTimeout(function() { try { app.quit(); } catch(e) {} }, 800);
       return { ok: true };

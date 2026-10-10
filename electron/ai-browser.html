@@ -24343,7 +24343,7 @@
           var done = function(res) {
             if (res && res.ok) {
               dlState = 'ready';
-              readyInfo = { bat: res.bat };
+              readyInfo = { ps: res.ps };
               setDlText('Restart to update', false);
               d.textContent = 'NEXORA v' + info.version + ' downloaded. Restart to finish installing \u2014 your tabs and data stay safe.';
             } else if (res && res.error === 'dev-mode') {
