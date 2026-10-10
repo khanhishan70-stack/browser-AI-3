@@ -12014,8 +12014,6 @@
         <button type="button" id="hfTestBtn" class="voice-btn hf-mic-test" title="Record 3 seconds and show what ESTA really hears">&#x1f3a4; Test</button>
         <div class="search-mode-toggle" id="searchModeToggle" title="Switch mode">
           <span class="mode-option" data-mode="esta">&#x1f4ac;</span>
-      <span class="mode-option" data-mode="docs">&#x1f4c4;</span>
-
           <span class="mode-option" data-mode="google">&#x1f50d;</span>
         </div>
       </div>
@@ -14125,7 +14123,6 @@
           <button class="sr-tool-btn" id="vSettingsBtn" title="Settings"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
           <button class="sr-tool-btn" id="vDownloadBtn" title="Downloads"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></button>
           <button class="sr-tool-btn" id="vTabMgrBtn" title="Tab Manager"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg></button>
-          <button class="sr-tool-btn" id="vPerfBtn" title="Performance Dashboard"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg></button>
           <button class="sr-tool-btn" id="vAcctBtn" title="Account Manager"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></button>
         </div>
       </div>
@@ -19346,7 +19343,7 @@
       state.activeIdx = data.activeIdx || 0;
       state.history = data.history || [];
       state.historyIdx = data.historyIdx || -1;
-      var VALID_MODES = ['esta','google','docs'];
+      var VALID_MODES = ['esta','google'];
       state.searchMode = VALID_MODES.indexOf(data.searchMode) !== -1 ? data.searchMode : 'google';
       state.voiceMuted = true;
       state.voiceLang = data.voiceLang || '';
@@ -19367,8 +19364,7 @@
     if (badge) {
       var labels = {
         esta: '\u{1f4ac} Chat',
-        google: '\u{1f50d} Google',
-        docs: '\u{1f4c4} Docs'
+        google: '\u{1f50d} Google'
       };
       badge.textContent = labels[mode] || mode.toUpperCase();
       badge.className = 'search-mode-badge' + (mode === 'google' ? ' google' : '');
@@ -19377,7 +19373,7 @@
     var du = document.getElementById('docsUploadArea');
     if (du) du.classList.toggle('hidden', mode !== 'docs');
   }
-  var MODE_ORDER = ['esta', 'google', 'docs'];
+  var MODE_ORDER = ['esta', 'google'];
   document.getElementById('searchModeToggle').addEventListener('click', function() {
     var idx = MODE_ORDER.indexOf(state.searchMode);
     var next = MODE_ORDER[(idx + 1) % MODE_ORDER.length];
@@ -22768,7 +22764,7 @@
     if (answer) {
       state._lastQuery = query;
       appendMsg('bot', answer, true, query);
-      var rhLabels = { esta: '\u{1f4ac} Chat', web: '\u{1f310} Web', docs: '\u{1f4c4} Docs', code: '\u{1f4bb} Code', voice: '\u{1f3a4} Voice', agent: '\u{2699} Agent', editor: '\u{1f3ac} Editor', vault: '\u{1f512} Vault', google: '\u{1f50d} Google' };
+      var rhLabels = { esta: '\u{1f4ac} Chat', web: '\u{1f310} Web', code: '\u{1f4bb} Code', voice: '\u{1f3a4} Voice', agent: '\u{2699} Agent', editor: '\u{1f3ac} Editor', vault: '\u{1f512} Vault', google: '\u{1f50d} Google' };
       resultMode.textContent = rhLabels[state.searchMode] || 'ESTA AI';
       resultMode.className = 'rh-mode';
     } else {
@@ -24221,7 +24217,7 @@
     vSettingsBtn: 'Customize NEXORA - appearance, privacy, features.',
     vDownloadBtn: 'Files you downloaded in this browser.',
     vTabMgrBtn: 'See every open tab, switch or close them.',
-    vPerfBtn: 'Speed, memory and health dashboard.',
+
     vAcctBtn: 'Your NEXORA account, sync and backup.',
     vMinimizeBtn2: 'Minimize the browser window.',
     vMaximizeBtn2: 'Maximize or restore the window.',
@@ -28983,7 +28979,7 @@ else setInterval(function () { oaiRefresh(true); }, 8000);
       state.activeIdx = savedSession.activeIdx || 0;
       state.history = savedSession.history || [];
       state.historyIdx = savedSession.historyIdx || -1;
-      var VALID_MODES = ['esta','google','docs'];
+      var VALID_MODES = ['esta','google'];
       var _sm = savedSession.searchMode;
       state.searchMode = VALID_MODES.indexOf(_sm) !== -1 ? _sm : 'google';
       setSearchMode(state.searchMode);
@@ -29238,7 +29234,7 @@ else setInterval(function () { oaiRefresh(true); }, 8000);
     state.activeIdx = data.activeIdx || 0;
     state.history = data.history || [];
     state.historyIdx = data.historyIdx || -1;
-    var VALID_MODES = ['esta','google','docs'];
+    var VALID_MODES = ['esta','google'];
     state.searchMode = VALID_MODES.indexOf(data.searchMode) !== -1 ? data.searchMode : 'google';
     if (typeof setSearchMode === 'function') setSearchMode(state.searchMode);
     state.voiceMuted = data.voiceMuted !== undefined ? data.voiceMuted : true;
@@ -30651,15 +30647,6 @@ else setInterval(function () { oaiRefresh(true); }, 8000);
       });
       var closeBtn = el('neoPerfClose');
       if (closeBtn) closeBtn.addEventListener('click', toggle);
-      var vp = el('vPerfBtn');
-      if (vp) {
-        vp.addEventListener('click', function() {
-          var d = el('vToolsDrop'); if (d) d.classList.remove('open');
-          var b = el('vToolsBtn'); if (b) b.classList.remove('active');
-          toggle();
-        });
-      }
-
       // ----- Draggable mini pill + corner position picker -----
       var CORNERS = { tl: { left: '8px', top: '8px' }, tr: { right: '8px', top: '8px' }, bl: { left: '8px', bottom: '8px' }, br: { right: '8px', bottom: '8px' } };
       var posBtns = document.querySelectorAll('.npd-pos-btn');
@@ -32787,8 +32774,6 @@ visionStatus.textContent = dynamicStatuses[0];
       'account': ['vAcctShortcut'],
       'accounts': ['vAcctShortcut'],
       'account manager': ['vAcctShortcut'],
-      'performance dashboard': ['vPerfBtn'],
-      'performance': ['vPerfBtn'],
       'ai tools': ['vAiBtn'],
       'video editor': ['vVideoEditorBtn'],
       'tab groups': ['homeTabGroupsBtn'],
