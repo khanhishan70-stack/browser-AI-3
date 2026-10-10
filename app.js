@@ -78,7 +78,7 @@
   }, { threshold: 0.12 });
   document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
 
-  var secs = ['features', 'esta', 'privacy', 'screens', 'faq'];
+  var secs = ['features', 'esta', 'privacy', 'screens', 'whatsnew', 'download', 'faq'];
   var navAs = Array.from(document.querySelectorAll('.nav-links a'));
   var spy = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {

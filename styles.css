@@ -247,6 +247,15 @@ body::before {
 .lightbox-card .shot-mini { height: 300px; border: 1px solid var(--line-soft); border-radius: 12px; }
 .lightbox-card p { color: var(--mut); }
 
+/* ---------- changelog ---------- */
+.changelog { margin-top: 34px; display: grid; gap: 14px; }
+.change { background: var(--card); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; transition: border-color .2s, transform .2s; }
+.change:hover { border-color: var(--line); transform: translateY(-2px); }
+.change-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.change-head strong { font-size: 17px; color: var(--neon); font-family: var(--mono); }
+.change-head span { color: var(--mut); font-size: 12.5px; }
+.change ul { margin: 0; padding-left: 20px; color: var(--mut); font-size: 14.5px; display: grid; gap: 5px; }
+
 /* ---------- download / faq / footer ---------- */
 .download .dl-card { margin-top: 30px; background: linear-gradient(135deg, #0c1410, var(--card)); border: 1px solid var(--line); border-radius: 20px; padding: 38px; }
 .dl-info strong { display: block; font-size: 20px; margin-bottom: 6px; }
