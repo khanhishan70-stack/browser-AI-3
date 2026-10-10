@@ -218,59 +218,6 @@ script.textContent = `
     }
   });
   try { _obs.observe(document.body || document.documentElement, {childList: true, subtree: true}); } catch(e) {}
-  // ===== YOUTUBE AD SKIPPER =====
-  window.__neoAdSkipEnabled = true;
-  window._neoAdSkipActive = false;
-  function _neoAdSkipLoop() {
-    if (window._neoAdSkipActive) return;
-    window._neoAdSkipActive = true;
-    function _loop() {
-      try {
-        if (!window.__neoAdSkipEnabled) { setTimeout(_loop, 2000); return; }
-        var player = document.getElementById('movie_player');
-        if (!player) { setTimeout(_loop, 1000); return; }
-        var adShowing = player.classList.contains('ad-showing');
-        if (adShowing) {
-          var skipBtn = document.querySelector('.ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-skip-ad-button, [class*="skip-ad"], .ytp-ad-skip-button-modern button, .ytp-ad-skip-button button');
-          if (skipBtn) { skipBtn.click(); try { skipBtn.dispatchEvent(new MouseEvent('click', {bubbles:true})); } catch(e2) {} }
-          var video = player.querySelector('video') || document.querySelector('video');
-          if (video) {
-            if (!video.muted) { video.muted = true; video.dataset.neoWasMuted = '1'; }
-            try { video.currentTime = video.duration - 0.5; } catch(e3) {}
-            try { video.playbackRate = 16; } catch(e4) {}
-          }
-          var overlays = document.querySelectorAll('.ytp-ad-overlay-container, .ytp-ad-text-overlay, .ytp-ad-image-overlay');
-          for (var i = 0; i < overlays.length; i++) overlays[i].style.display = 'none';
-        } else {
-          var video2 = player.querySelector('video') || document.querySelector('video');
-          if (video2) {
-            if (video2.dataset && video2.dataset.neoWasMuted === '1') { video2.muted = false; delete video2.dataset.neoWasMuted; }
-            try { video2.playbackRate = 1; } catch(e5) {}
-          }
-        }
-      } catch(e) {}
-      setTimeout(_loop, 300);
-    }
-    _loop();
-  }
-  function _startNeoAdSkip() {
-    if (location.hostname.indexOf('youtube.com') !== -1) _neoAdSkipLoop();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _startNeoAdSkip);
-  } else {
-    _startNeoAdSkip();
-  }
-  var _lastYtPath2 = location.pathname + location.search;
-  setInterval(function() {
-    if (location.pathname + location.search !== _lastYtPath2) {
-      _lastYtPath2 = location.pathname + location.search;
-      if (location.pathname.indexOf('/watch') !== -1) {
-        window._neoAdSkipActive = false;
-        setTimeout(_neoAdSkipLoop, 500);
-      }
-    }
-  }, 1000);
   // ===== YOUTUBE DOWNLOAD BUTTON =====
   function _injectYTDL() {
     if (!location.pathname.startsWith('/watch')) return;
