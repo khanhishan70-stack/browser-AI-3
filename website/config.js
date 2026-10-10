@@ -11,9 +11,9 @@ window.NEXORA_SITE = {
   releasesUrl: "https://github.com/khanhishan70-stack/browser-AI-3/releases/latest",
 
   // Portable ZIP: extract, open "NEXORA Browser", run launch.bat (or NEXORA.exe).
-  windowsInstallerUrl: "https://github.com/khanhishan70-stack/browser-AI-3/releases/download/v1.0.3/NEXORA_Browser_20261010_0551.zip",
+  windowsInstallerUrl: "https://github.com/khanhishan70-stack/browser-AI-3/releases/download/v1.0.4/NEXORA_Browser_20261010_1542.zip",
 
-  releaseInfo: { version: "1.0.3", date: "2026-10-10", size: "338 MB", arch: "Windows x64" },
+  releaseInfo: { version: "1.0.4", date: "2026-10-10", size: "338 MB", arch: "Windows x64" },
 
   // Contact for security reports, when available.
   securityContact: ""

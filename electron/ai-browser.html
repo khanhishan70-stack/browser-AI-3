@@ -24371,6 +24371,45 @@
     window.addEventListener('blur', _toolPrevHide);
   })();
 
+  // ===== UPDATE BANNER (new NEXORA release on GitHub, Chrome-style) =====
+  if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
+    window.electronAPI.onUpdateAvailable(function(info) {
+      try {
+        if (!info || !info.version) return;
+        if (document.getElementById('nxUpdateBanner')) return;
+        var b = document.createElement('div');
+        b.id = 'nxUpdateBanner';
+        b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:60000;max-width:330px;background:rgba(8,10,18,0.96);border:1px solid rgba(0,255,249,0.32);border-radius:14px;padding:14px 16px;box-shadow:0 14px 44px rgba(0,0,0,0.6),0 0 26px rgba(0,255,249,0.1);font-family:inherit;color:#fff;';
+        var t = document.createElement('div');
+        t.style.cssText = 'font-size:14px;font-weight:700;margin-bottom:4px;';
+        t.textContent = '\u2728 NEXORA v' + info.version + ' is here';
+        var d = document.createElement('div');
+        d.style.cssText = 'font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:4px;line-height:1.5;';
+        d.textContent = info.notes || 'New features and fixes are ready. Update in one click.';
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px;margin-top:10px;';
+        var dl = document.createElement('button');
+        dl.textContent = 'Download update';
+        dl.style.cssText = 'flex:1;background:rgba(0,255,249,0.14);border:1px solid rgba(0,255,249,0.3);color:#00fff9;border-radius:9px;padding:8px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;';
+        dl.addEventListener('click', function() {
+          try { if (window.electronAPI.launchInChrome) window.electronAPI.launchInChrome(info.url); } catch(e) {}
+          try { if (window.electronAPI.updateDismiss) window.electronAPI.updateDismiss(info.version); } catch(e) {}
+          b.remove();
+        });
+        var later = document.createElement('button');
+        later.textContent = 'Later';
+        later.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:9px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:inherit;';
+        later.addEventListener('click', function() {
+          try { if (window.electronAPI.updateDismiss) window.electronAPI.updateDismiss(info.version); } catch(e) {}
+          b.remove();
+        });
+        row.appendChild(dl); row.appendChild(later);
+        b.appendChild(t); b.appendChild(d); b.appendChild(row);
+        document.body.appendChild(b);
+      } catch(e) {}
+    });
+  }
+
   function applyUiLayout(mode) {
     var browser = document.getElementById('browser');
     // Classic layout was removed; Simplified is the only layout.

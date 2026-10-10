@@ -2499,6 +2499,93 @@ app.whenReady().then(async () => {
     session.defaultSession.setDisplayMediaRequestHandler(_dmHandler);
   } catch(e) {}
 
+  // ===== AUTO-UPDATE CHECK (portable builds have no Squirrel updater) =====
+  // Polls our GitHub releases feed; when a newer tag exists the UI shows a
+  // one-click "Download update" banner. Installing stays manual (portable
+  // ZIP), but no user ever misses a release again.
+  var _updateDismissed = '';
+  var _updateFile = null;
+  try {
+    var _updDir = path.join(app.getPath('userData'), 'neo-data');
+    try { if (!fs.existsSync(_updDir)) fs.mkdirSync(_updDir, { recursive: true }); } catch(e) {}
+    _updateFile = path.join(_updDir, 'update-check.json');
+    try {
+      var _ud = JSON.parse(fs.readFileSync(_updateFile, 'utf8'));
+      if (_ud && _ud.dismissed) _updateDismissed = String(_ud.dismissed);
+    } catch(e) {}
+  } catch(e) {}
+  function _updateSave() {
+    try { if (_updateFile) fs.writeFileSync(_updateFile, JSON.stringify({ dismissed: _updateDismissed })); } catch(e) {}
+  }
+  function _localAppVersion() {
+    try { return String(require('./package.json').version || '0.0.0'); } catch(e) { return '0.0.0'; }
+  }
+  function _verIsNewer(a, b) {
+    function parts(s) { return String(s).split('.').map(function(x) { var n = parseInt(x, 10); return isNaN(n) ? 0 : n; }); }
+    var pa = parts(a), pb = parts(b);
+    for (var i = 0; i < 3; i++) {
+      var x = pa[i] || 0, y = pb[i] || 0;
+      if (x !== y) return x > y;
+    }
+    return false;
+  }
+  function _fetchReleaseJson() {
+    return new Promise(function(resolve, reject) {
+      try {
+        var req = https.get('https://api.github.com/repos/khanhishan70-stack/browser-AI-3/releases/latest', {
+          headers: { 'User-Agent': 'NEXORA-Browser-Updater', 'Accept': 'application/vnd.github+json' }
+        }, function(res) {
+          var code = res.statusCode || 0;
+          if (code !== 200) { res.resume(); return reject(new Error('HTTP ' + code)); }
+          var buf = '';
+          res.on('data', function(c) { buf += c; });
+          res.on('end', function() {
+            try { resolve(JSON.parse(buf)); } catch(e) { reject(e); }
+          });
+          res.on('error', reject);
+        });
+        req.setTimeout(15000, function() { try { req.destroy(new Error('Update check timed out')); } catch(e) {} });
+        req.on('error', reject);
+      } catch(e) { reject(e); }
+    });
+  }
+  function _updateBroadcast(info) {
+    try {
+      var wins = BrowserWindow.getAllWindows() || [];
+      for (var i = 0; i < wins.length; i++) {
+        try { if (wins[i] && !wins[i].isDestroyed()) wins[i].webContents.send('update-available', info); } catch(e) {}
+      }
+    } catch(e) {}
+  }
+  var _updateLastCheck = 0;
+  function _updateCheck(manual) {
+    try {
+      var now = Date.now();
+      if (!manual && now - _updateLastCheck < 6 * 3600 * 1000) return;
+      _updateLastCheck = now;
+      _fetchReleaseJson().then(function(rel) {
+        try {
+          var tag = String((rel && rel.tag_name) || '').replace(/^v/i, '');
+          var url = rel && rel.html_url ? String(rel.html_url) : '';
+          if (!tag || !url) return;
+          if (!_verIsNewer(tag, _localAppVersion())) return;
+          if (!manual && tag === _updateDismissed) return;
+          var notes = '';
+          try {
+            notes = String((rel && rel.body) || '').replace(/[#*_`>\r]/g, '').replace(/\n+/g, ' ').trim().slice(0, 300);
+          } catch(e) {}
+          _updateBroadcast({ version: tag, url: url, notes: notes });
+        } catch(e) {}
+      }).catch(function() {});
+    } catch(e) {}
+  }
+  ipcMain.handle('update-check-now', async function() { try { _updateCheck(true); return true; } catch(e) { return false; } });
+  ipcMain.handle('update-dismiss', async function(event, v) {
+    try { _updateDismissed = String(v || ''); _updateSave(); return true; } catch(e) { return false; }
+  });
+  try { setTimeout(function() { _updateCheck(false); }, 10000); } catch(e) {}
+  try { setInterval(function() { _updateCheck(false); }, 6 * 3600 * 1000); } catch(e) {}
+
   // Renderer answers the prompt bubble / picker, or manages site settings.
   ipcMain.on('permission-response', function(event, payload) {
     try {
